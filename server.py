@@ -1,27 +1,26 @@
 #!/usr/bin/env python3
 
 from flask import Flask, request, jsonify
-from llm import PortfolioAssistant
+from llm import AIAssistant
 
 app = Flask(__name__)
 
-@app.route('/analyze', methods=['POST'])
+@app.route('/simple-llm-request', methods=['POST'])
 def analyze_portfolio():
-    """API endpoint for portfolio analysis"""
+    """API endpoint for simple llm request"""
     data = request.json
 
-    assistant = PortfolioAssistant(
+    assistant = AIAssistant(
         provider=data.get('provider', 'ollama'),
         model=data.get('model', 'deepseek-r1:14b'),
         langchain=data.get('langchain', False)
     )
 
     try:
-        recommendation = assistant.generate_recommendation(data['prompt'])
+        recommendation = assistant.generate_response(data['prompt'])
 
         return jsonify({
             "recommendation": recommendation,
-            "explanation": explanation,
             "model": assistant.model
         })
     except Exception as e:

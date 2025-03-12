@@ -10,21 +10,8 @@ from retry import retry
 import argparse
 import json
 
-class AIServiceProvider(ABC):
-    """Abstract base class for AI service providers"""
-
-    @abstractmethod
-    def generate_recommendation(self, prompt: str) -> str:
-        """Generate investment recommendation based on prompt"""
-        pass
-
-    @abstractmethod
-    def generate_explanation(self, financial_data: Dict) -> str:
-        """Generate natural language explanation for recommendations"""
-        pass
-
-class PortfolioAssistant(AIServiceProvider):
-    """Portfolio analysis assistant with multi-provider support"""
+class AIAssistant():
+    """AI base assistant with multi-provider support"""
 
     def __init__(
         self,
@@ -62,17 +49,9 @@ class PortfolioAssistant(AIServiceProvider):
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
 
-    def _get_base_url(self) -> str:
-        """Get base URL for API endpoint"""
-        urls = {
-            "ollama": "http://localhost:11434",
-            "openai": "https://api.openai.com/v1"
-        }
-        return urls.get(self.provider)
-
     @retry(tries=3, delay=2, backoff=2)
-    def generate_recommendation(self, prompt: str) -> str:
-        """Generate investment recommendation with retry logic"""
+    def generate_response(self, prompt: str) -> str:
+        """Generate response with retry logic"""
         try:
             if self.langchain:
                 return self.llm.invoke(prompt)
@@ -82,20 +61,22 @@ class PortfolioAssistant(AIServiceProvider):
             self._handle_error(e)
             return "Error generating recommendation"
 
-    def generate_explanation(self, financial_data: Dict) -> str:
-        """Generate explanation for financial recommendations"""
-        prompt = self._build_explanation_prompt(financial_data)
-        return self.generate_recommendation(prompt)
+    def _handle_error(self, error: Exception):
+        """Handle and log errors"""
+        print(f"AI Service Error: {str(error)}")
+        # Add logging service integration here
 
-    def _build_explanation_prompt(self, data: Dict) -> str:
-        """Construct structured prompt for financial explanations"""
-        return f"""
-        Analyze the following portfolio data and generate a detailed explanation:
-        - Assets: {data['assets']}
-        - Risk Profile: {data['risk_profile']}
-        - Market Conditions: {data['market_conditions']}
-        Provide reasoning for each recommendation in simple terms.
-        """
+    #####################################
+    # Methods for use without langchain #
+    #####################################
+
+    def _get_base_url(self) -> str:
+        """Get base URL for API endpoint"""
+        urls = {
+            "ollama": "http://127.0.0.1:11434",
+            "openai": "https://api.openai.com/v1"
+        }
+        return urls.get(self.provider)
 
     def _direct_api_call(self, prompt: str) -> str:
         """Direct API call without LangChain middleware"""
@@ -141,15 +122,10 @@ class PortfolioAssistant(AIServiceProvider):
         elif self.provider == "openai":
             return response.json()["choices"][0]["message"]["content"]
 
-    def _handle_error(self, error: Exception):
-        """Handle and log errors"""
-        print(f"AI Service Error: {str(error)}")
-        # Add logging service integration here
-
 def main():
     """Command line interface for manual testing"""
     parser = argparse.ArgumentParser(
-        description="Portfolio Analysis AI Assistant"
+        description="AI Assistant"
     )
     parser.add_argument("--provider", default="ollama",
                       help="AI service provider (ollama|openai)")
@@ -162,22 +138,22 @@ def main():
 
     args = parser.parse_args()
 
-    assistant = PortfolioAssistant(
+    assistant = AIAssistant(
         provider=args.provider,
         model=args.model,
         langchain=args.langchain
     )
 
-    result = assistant.generate_recommendation(args.prompt)
+    result = assistant.generate_response(args.prompt)
     print(json.dumps(result, indent=2))
 
 def manual_test():
-    assistant = PortfolioAssistant(
+    assistant = AIAssistant(
         provider="ollama",
         model="deepseek-r1:14b"
     )
 
-    result = assistant.generate_recommendation("Which stock was the best performing in 2018?")
+    result = assistant.generate_response("Count to 3")
     print(result)
 
 if __name__ == "__main__":
