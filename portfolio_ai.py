@@ -3,6 +3,8 @@
 from typing import Dict, List, Optional
 import yfinance as yf
 from llm import AIAssistant
+import json
+import re
 
 class PortfolioAIAssistant(AIAssistant):
     """AI-powered portfolio analysis assistant with security evaluation capabilities"""
@@ -15,6 +17,9 @@ class PortfolioAIAssistant(AIAssistant):
         """Convert WKN/ISIN to Yahoo Finance ticker (placeholder implementation)"""
         # TODO: Implement proper financial identifier resolution
         # This should handle different identifier types and market data sources
+
+        # Idea: Using an API or Scrape certain pages or always use Ticker in the first place
+
         return "AAPL"  # Dummy return for testing
 
     def get_quantitative_data(self, identifier: str) -> Dict:
@@ -46,36 +51,85 @@ class PortfolioAIAssistant(AIAssistant):
         ]
 
     def assess_security(self,
-                      security_data: Dict,
-                      portfolio_attributes: Dict) -> Dict:
+                  security_data: Dict,
+                  portfolio_attributes: Dict) -> Dict:
         """
-        Evaluate security using LLM with comprehensive data analysis
-        Returns: {"buy": %, "sell": %, "hold": %, "rationale": str}
+        Evaluate security using LLM with comprehensive data analysis.
+        Returns a dictionary with buy/sell/hold percentages and rationale.
+
+        :param security_data: Dictionary containing quantitative and qualitative data
+        :param portfolio_attributes: Dictionary containing portfolio-specific attributes
+        :return: Dictionary with keys "buy", "sell", "hold" (summing to 100%) and "rationale"
         """
         # Construct analysis prompt
         prompt = f"""
-        Analyze investment position:
-        - Company fundamentals: {security_data.get('quantitative', {})}
-        - Market news: {security_data.get('qualitative', [])}
-        - Portfolio context: {portfolio_attributes}
+        Analyze the following investment position and provide recommendations:
 
-        Provide recommendations as JSON with buy/sell/hold percentages (sum 100%)
-        and detailed rationale.
+        **Company Fundamentals:**
+        {json.dumps(security_data.get('quantitative', {}), indent=2)}
+
+        **Market News:**
+        {json.dumps(security_data.get('qualitative', []), indent=2)}
+
+        **Portfolio Context:**
+        {json.dumps(portfolio_attributes, indent=2)}
+
+        Provide your recommendations in the following JSON format:
+        {{
+            "buy": <percentage>,
+            "sell": <percentage>,
+            "hold": <percentage>,
+            "rationale": "<detailed explanation>"
+        }}
+        Ensure that the percentages sum to 100%.
         """
 
         try:
+            print("Generating LLM response for security assessment...")
             response = self.generate_response(prompt)
-            # TODO: Implement robust response parsing
-            # This should handle different LLM output formats
-            return {
-                "buy": 40.0,
-                "sell": 25.0,
-                "hold": 35.0,
-                "rationale": response.strip()
-            }
+            print(f"LLM raw response: {response}")
+
+            # Parse the LLM response
+            try:
+                # Extract json from response via regex
+                json_string = re.search(r"```json\n(.*?)\n```", response, re.DOTALL).group(1)
+
+                print(f"LLM extracted JSON response: {json_string}")
+
+                # Attempt to parse the response as JSON
+                recommendation = json.loads(response)
+
+                # Validate the response structure
+                if not all(key in recommendation for key in ["buy", "sell", "hold", "rationale"]):
+                    raise ValueError("Missing required keys in LLM response")
+
+                # Validate that percentages sum to 100%
+                total = recommendation["buy"] + recommendation["sell"] + recommendation["hold"]
+                if not abs(total - 100.0) < 0.01:  # Allow for floating-point inaccuracies
+                    raise ValueError(f"Percentages do not sum to 100% (sum: {total})")
+
+                print("Successfully parsed and validated LLM response")
+                return recommendation
+
+            except json.JSONDecodeError:
+                # Fallback: If the response is not valid JSON, extract percentages and rationale
+                print("LLM response is not valid JSON. Attempting to extract data...")
+                print(f"Assessment failed: {str(e)}")
+                return {
+                    "buy": 0.0,
+                    "sell": 0.0,
+                    "hold": 0.0,
+                    "rationale": f"Error: {str(e)}"
+                }
+
         except Exception as e:
             print(f"Assessment failed: {str(e)}")
-            return {}
+            return {
+                "buy": 0.0,
+                "sell": 0.0,
+                "hold": 0.0,
+                "rationale": f"Error: {str(e)}"
+            }
 
     def evaluate_portfolio(self,
                          portfolio: Dict[str, Dict],
