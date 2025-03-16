@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# To-Do:
+# Simplify code
+# Restrucure and order code
+# Add suitable logging instead of print
+
 from typing import Dict, List, Optional
 import yfinance as yf
 from llm import AIAssistant
@@ -13,19 +18,12 @@ class PortfolioAIAssistant(AIAssistant):
         super().__init__(*args, **kwargs)
         self.securities_data = {}
 
-    def _resolve_ticker(self, identifier: str, id_type: str = "WKN") -> str:
-        """Convert WKN/ISIN to Yahoo Finance ticker (placeholder implementation)"""
-        # TODO: Implement proper financial identifier resolution
-        # This should handle different identifier types and market data sources
-
-        # Idea: Using an API or Scrape certain pages or always use Ticker in the first place
-
-        return "AAPL"  # Dummy return for testing
-
     def get_quantitative_data(self, identifier: str) -> Dict:
         """Retrieve quantitative financial data from Yahoo Finance"""
         try:
-            ticker = self._resolve_ticker(identifier)
+            # ticker = self._resolve_ticker(identifier) #TODO: Implement the use of this
+            ticker = identifier # As long as we save the ticker
+
             stock = yf.Ticker(ticker)
 
             # TODO: Add more comprehensive data points
@@ -40,15 +38,50 @@ class PortfolioAIAssistant(AIAssistant):
             print(f"Error fetching quantitative data: {str(e)}")
             return {}
 
+
     def get_qualitative_data(self, identifier: str) -> List[str]:
-        """Collect qualitative information from news sources (stub implementation)"""
-        # TODO: Implement news API integration
-        # Potential sources: Google News, Seeking Alpha, Morningstar
-        return [
-            "Company announces breakthrough in AI technology",
-            "Sector faces new regulatory challenges",
-            "Analysts upgrade stock rating"
-        ]
+        """Collect qualitative information from multiple sources"""
+
+        llm_analysis = self._get_llm_analysis(identifier)
+
+        news_items = self._get_scraped_news(identifier)
+
+        results = f"""
+        Available company informations from LLM:
+        {llm_analysis}
+
+        News informations:
+        {news_items}
+        """
+
+        return results
+
+    def _get_llm_analysis(self, identifier: str) -> List[str]:
+        """Ask the LLM for informtaions about the company"""
+        prompt = f"""
+        Analyze the company with identifier {identifier} considering:
+        1. Core business model and market position
+        2. Notable recent activities (last 12 months)
+        3. Potential risks and opportunities
+
+        Include your knowledge cutoff date.
+        """
+
+        try:
+            response = self.generate_response(prompt)
+            return response
+        except Exception as e:
+            print(f"LLM analysis failed: {str(e)}")
+            return []
+
+    def _get_scraped_news(self, identifier: str) -> List[str]:
+        """Scrape aktuelle Nachrichtenartikel"""
+        try:
+            return "No news implemented yet" #TODO: Implement the scraper
+
+        except Exception as e:
+            print(f"News scraping failed: {str(e)}")
+            return []
 
     def assess_security(self,
                   security_data: Dict,
@@ -97,7 +130,7 @@ class PortfolioAIAssistant(AIAssistant):
                 print(f"LLM extracted JSON response: {json_string}")
 
                 # Attempt to parse the response as JSON
-                recommendation = json.loads(response)
+                recommendation = json.loads(json_string)
 
                 # Validate the response structure
                 if not all(key in recommendation for key in ["buy", "sell", "hold", "rationale"]):
@@ -111,7 +144,7 @@ class PortfolioAIAssistant(AIAssistant):
                 print("Successfully parsed and validated LLM response")
                 return recommendation
 
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
                 # Fallback: If the response is not valid JSON, extract percentages and rationale
                 print("LLM response is not valid JSON. Attempting to extract data...")
                 print(f"Assessment failed: {str(e)}")
@@ -130,6 +163,15 @@ class PortfolioAIAssistant(AIAssistant):
                 "hold": 0.0,
                 "rationale": f"Error: {str(e)}"
             }
+
+    def _resolve_ticker(self, identifier: str, id_type: str = "WKN") -> str:
+        """Convert WKN/ISIN to Yahoo Finance ticker (placeholder implementation)"""
+        # TODO: Implement proper financial identifier resolution
+        # This should handle different identifier types and market data sources
+
+        # Idea: Using an API or Scrape certain pages or always use Ticker in the first place
+
+        return "AAPL"  # Dummy return for testing
 
     def evaluate_portfolio(self,
                          portfolio: Dict[str, Dict],
@@ -153,6 +195,7 @@ class PortfolioAIAssistant(AIAssistant):
 
         # TODO: Add portfolio-level analysis and risk assessment
         return results
+
 
     def evaluate_with_multiple_llms(self,
                                   portfolio: Dict[str, Dict],
@@ -212,8 +255,6 @@ def main():
         model="deepseek-r1:14b"
     )
 
-    # Monkey patch ticker resolution for testing
-    assistant._resolve_ticker = lambda id, _: id  # Bypass WKN/ISIN conversion
 
     # Run portfolio evaluation
     results = assistant.evaluate_portfolio(test_portfolio)
