@@ -17,10 +17,10 @@ def analyze_portfolio():
     )
 
     try:
-        recommendation = assistant.generate_response(data['prompt'])
+        response = assistant.generate_response(data['prompt'])
 
         return jsonify({
-            "recommendation": recommendation,
+            "response": recommendation,
             "model": assistant.model
         })
     except Exception as e:

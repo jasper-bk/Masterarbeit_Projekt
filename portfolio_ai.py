@@ -4,6 +4,7 @@
 # Simplify code
 # Restrucure and order code
 # Add suitable logging instead of print
+# Needs option to see the process of the data and to provide it later on in an interface to understand what happened
 
 from typing import Dict, List, Optional
 import yfinance as yf

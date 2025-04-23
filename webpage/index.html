@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .navbar-custom {
+      background-color: #000;
+    }
+    .navbar-custom .navbar-brand, .navbar-custom .nav-link {
+      color: #fff;
+    }
+    .box {
+      border: 2px solid #007bff;
+      border-radius: 10px;
+      padding: 15px;
+      margin: 10px;
+      min-height: 150px;
+      background: white;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .traffic-light-container {
+      display: flex;
+      align-items: center;
+      margin-right: 20px;
+    }
+    .traffic-light {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 60px;
+      height: 160px;
+      border: 3px solid black;
+      border-radius: 30px;
+      padding: 5px;
+      background-color: #fff;
+    }
+    .light {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      margin: 5px 0;
+    }
+    .green { background-color: #28a745; }
+    .yellow { background-color: #ffc107; }
+    .red { background-color: #dc3545; }
+    h5, h6 {
+      color: #343a40;
+    }
+    #urgency-list ul li {
+      background-color: #e9f5ff;
+      border-left: 5px solid #007bff;
+    }
+    .text-primary {
+      color: #0069d9 !important;
+    }
+    .urgency-text {
+      margin-left: 15px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #0069d9;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-custom px-3">
+    <a class="navbar-brand" href="#">Portfolio Dashboard</a>
+    <div class="ms-auto">
+      <a href="#" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" class="bi bi-gear" viewBox="0 0 16 16">
+        <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
+        <path d="M9.796 1.343c-.527-1.06-1.965-1.06-2.492 0l-.094.19a1.007 1.007 0 0 1-1.356.432l-.183-.098c-1.07-.57-2.286.646-1.716 1.716l.098.183a1.007 1.007 0 0 1-.432 1.356l-.19.094c-1.06.527-1.06 1.965 0 2.492l.19.094a1.007 1.007 0 0 1 .432 1.356l-.098.183c-.57 1.07.646 2.286 1.716 1.716l.183-.098a1.007 1.007 0 0 1 1.356.432l.094.19c.527 1.06 1.965 1.06 2.492 0l.094-.19a1.007 1.007 0 0 1 1.356-.432l.183.098c1.07.57 2.286-.646 1.716-1.716l-.098-.183a1.007 1.007 0 0 1 .432-1.356l.19-.094c1.06-.527 1.06-1.965 0-2.492l-.19-.094a1.007 1.007 0 0 1-.432-1.356l.098-.183c.57-1.07-.646-2.286-1.716-1.716l-.183.098a1.007 1.007 0 0 1-1.356-.432l-.094-.19z"/>
+      </svg></a>
+    </div>
+  </nav>
+
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Left Sidebar -->
+      <div class="col-md-2 box draggable resizable" id="urgency-list">
+        <h5>Urgency for action</h5>
+        <ul class="list-group">
+          <li class="list-group-item">Stock 1 - 50%</li>
+          <li class="list-group-item">Stock 2 - 25%</li>
+          <li class="list-group-item">...</li>
+          <li class="list-group-item">Stock 16 - 0%</li>
+        </ul>
+      </div>
+
+      <!-- Stock Info Box -->
+      <div class="col-md-3 box draggable resizable" id="stock-info">
+        <h6>Market Summary:</h6>
+        <p>...</p>
+        <h6>Current Opportunities:</h6>
+        <p>...</p>
+        <h6>Current Risks:</h6>
+        <p>...</p>
+        <h6>Other:</h6>
+        <p>...</p>
+      </div>
+
+      <!-- Right Area -->
+      <div class="col-md-7">
+        <div class="row">
+          <!-- Quick Overview -->
+          <div class="col-md-8 box draggable resizable" id="quick-overview">
+            <h5>Quick Overview</h5>
+            <div class="d-flex align-items-center">
+              <div class="traffic-light-container">
+                <div class="traffic-light">
+                  <div class="light red"></div>
+                  <div class="light yellow"></div>
+                  <div class="light green"></div>
+                </div>
+                <div class="urgency-text">Urgency: 34%</div>
+              </div>
+              <canvas id="pieChart" width="120" height="120"></canvas>
+            </div>
+          </div>
+
+          <!-- Textual Evaluation -->
+          <div class="col-md-4 box draggable resizable" id="text-evaluation">
+            <h6>Natural language assessment of the entire portfolio with explanation:</h6>
+            <p class="text-primary">Given the current market situation, it is recommended to ...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Make all .draggable and .resizable elements functional
+    $(function () {
+      const container = 'body';
+      $('.draggable').draggable({
+        cancel: '.ui-resizable-handle',
+        grid: [20, 20],
+        containment: container // Restrict dragging within body
+      });
+
+      $('.resizable').resizable({
+        grid: [20, 20],
+        handles: 'n, e, s, w, ne, se, sw, nw',
+        containment: container // Restrict resizing within body
+      });
+    });
+
+    // Chart.js Pie chart
+    const ctx = document.getElementById('pieChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: ['Sell', 'Hold', 'Buy'],
+        datasets: [{
+          data: [20, 10, 70],
+          backgroundColor: ['#dc3545', '#6c757d', '#28a745'],
+        }]
+      },
+      options: {
+        responsive: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
