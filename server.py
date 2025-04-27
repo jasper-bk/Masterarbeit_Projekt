@@ -1,9 +1,27 @@
 #!/usr/bin/env python3
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory, render_template
 from llm import AIAssistant
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='webpage/templates', static_folder='webpage/static')
+
+###########
+# Webpage #
+###########
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+# Serve static files (CSS/JS)
+@app.route('/<path:filename>')
+def static_files(filename):
+    return send_from_directory(app.static_folder, filename)
+
+
+#######
+# API #
+#######
 
 @app.route('/simple-llm-request', methods=['POST'])
 def analyze_portfolio():
