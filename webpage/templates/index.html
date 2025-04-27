@@ -45,15 +45,15 @@
           </div>
 
           <!-- Market Info Box -->
-          <div class="col-md-3 box draggable resizable" id="stock-info">
+          <div class="col-md-3 box draggable resizable" id="market-info">
             <h6>Market Summary:</h6>
-            <p>...</p>
+            <p id="market-summary-text">...</p>
             <h6>Current Opportunities:</h6>
-            <p>...</p>
+            <p id="current-opportunities-text">...</p>
             <h6>Current Risks:</h6>
-            <p>...</p>
+            <p id="current-risks-text">...</p>
             <h6>Other:</h6>
-            <p>...</p>
+            <p id="other-text">...</p>
           </div>
 
           <!-- Quick Overview -->
@@ -74,9 +74,9 @@
             </div>
 
             <!-- Textual Evaluation -->
-            <div class="col-md-10 box draggable resizable" id="text-evaluation">
+            <div class="col-md-10 box draggable resizable">
               <h6>Natural language assessment of the entire portfolio with explanation:</h6>
-              <p class="text-primary">Given the current market situation, it is recommended to ...</p>
+              <p class="text-primary" id="explanation-evaluation-text">Given the current market situation, it is recommended to ...</p>
             </div>
           </div>
 
@@ -89,7 +89,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="/static/ui_actions.js"></script>
   <script src="/static/model.js"></script>
+  <script src="/static/api.js"></script>
+  <script src="/static/ui_actions.js"></script>
 </body>
 </html>

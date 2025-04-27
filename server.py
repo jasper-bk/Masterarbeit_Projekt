@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 from flask import Flask, request, jsonify, send_from_directory, render_template
+from flask_cors import CORS
 from llm import AIAssistant
 
 app = Flask(__name__, template_folder='webpage/templates', static_folder='webpage/static')
+CORS(app)  # Enable CORS if needed
 
 ###########
 # Webpage #
@@ -19,9 +21,37 @@ def static_files(filename):
     return send_from_directory(app.static_folder, filename)
 
 
-#######
-# API #
-#######
+###############
+# Webpage API #
+###############
+
+@app.route('/api/portfolio')
+def get_portfolio():
+    return jsonify({
+        'overallUrgency': 34,
+        'overallBuy': 70,
+        'overallSell': 20,
+        'overallHold': 10,
+        'marketSummary': 'Dummy Market Summary',
+        'currentOpportunities': 'Sample Opportunities',
+        'currentRisks': 'Potential Risks',
+        'other': 'Additional Information',
+        'languageAssessment': 'Language Analysis'
+    })
+
+@app.route('/api/stocks')
+def get_stocks():
+
+    return jsonify([
+        {'name': 'Bayer', 'urgency': 0.5, 'buy': 0, 'sell': 0, 'hold': 0},
+        {'name': 'BASF', 'urgency': 0.4, 'buy': 0, 'sell': 0, 'hold': 0},
+        {'name': 'Meta', 'urgency': 0.25, 'buy': 0, 'sell': 0, 'hold': 0},
+        {'name': 'Amazon', 'urgency': 0.0, 'buy': 0, 'sell': 0, 'hold': 0}
+    ])
+
+###########
+# LLM API #
+###########
 
 @app.route('/simple-llm-request', methods=['POST'])
 def analyze_portfolio():
