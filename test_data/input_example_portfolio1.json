@@ -1,0 +1,16 @@
+{
+    "GOOG": {
+        "name" : "Alphabet",
+        "purchase_price": 134.50,
+        "quantity": 25,
+        "holding_days": 450,
+        "current_yield": 0.0045
+    },
+    "BAYN.DE": {
+        "name" : "Bayer",
+        "purchase_price": 45.30,
+        "quantity": 150,
+        "holding_days": 600,
+        "current_yield": 0.026
+    }
+}

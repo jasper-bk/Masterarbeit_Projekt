@@ -3,6 +3,7 @@
 from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
 from llm import AIAssistant
+import json
 
 app = Flask(__name__, template_folder='webpage/templates', static_folder='webpage/static')
 CORS(app)  # Enable CORS if needed
@@ -42,12 +43,10 @@ def get_portfolio():
 @app.route('/api/stocks')
 def get_stocks():
 
-    return jsonify([
-        {'name': 'Bayer', 'urgency': 0.5, 'buy': 0, 'sell': 0, 'hold': 0},
-        {'name': 'BASF', 'urgency': 0.4, 'buy': 0, 'sell': 0, 'hold': 0},
-        {'name': 'Meta', 'urgency': 0.25, 'buy': 0, 'sell': 0, 'hold': 0},
-        {'name': 'Amazon', 'urgency': 0.0, 'buy': 0, 'sell': 0, 'hold': 0}
-    ])
+    with open("./test_data/analyzed_example_portfolio.json", 'r') as file:
+        test_portfolio = json.load(file)
+
+    return jsonify(list(test_portfolio.values()))
 
 ###########
 # LLM API #

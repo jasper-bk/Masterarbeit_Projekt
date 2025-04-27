@@ -93,8 +93,9 @@ class PortfolioAIAssistant(AIAssistant):
 
         :param security_data: Dictionary containing quantitative and qualitative data
         :param portfolio_attributes: Dictionary containing portfolio-specific attributes
-        :return: Dictionary with keys "buy", "sell", "hold" (summing to 100%) and "rationale"
+        :return: Dictionary with keys "urgency_to_act", "buy", "sell", "hold" (summing to 100%) and "rationale"
         """
+
         # Construct analysis prompt
         prompt = f"""
         Analyze the following investment position and provide recommendations:
@@ -110,6 +111,7 @@ class PortfolioAIAssistant(AIAssistant):
 
         Provide your recommendations in the following JSON format:
         {{
+            "urgency_to_act": <percentage>,
             "buy": <percentage>,
             "sell": <percentage>,
             "hold": <percentage>,
@@ -134,12 +136,13 @@ class PortfolioAIAssistant(AIAssistant):
                 recommendation = json.loads(json_string)
 
                 # Validate the response structure
-                if not all(key in recommendation for key in ["buy", "sell", "hold", "rationale"]):
+                if not all(key in recommendation for key in ["buy", "sell", "hold", "rationale", "urgency_to_act"]):
                     raise ValueError("Missing required keys in LLM response")
 
                 # Validate that percentages sum to 100%
                 total = recommendation["buy"] + recommendation["sell"] + recommendation["hold"]
                 if not abs(total - 100.0) < 0.01:  # Allow for floating-point inaccuracies
+                    #TODO: Implement redo mechanism
                     raise ValueError(f"Percentages do not sum to 100% (sum: {total})")
 
                 print("Successfully parsed and validated LLM response")
@@ -150,6 +153,7 @@ class PortfolioAIAssistant(AIAssistant):
                 print("LLM response is not valid JSON. Attempting to extract data...")
                 print(f"Assessment failed: {str(e)}")
                 return {
+                    "urgency_to_act" : 0.0,
                     "buy": 0.0,
                     "sell": 0.0,
                     "hold": 0.0,
@@ -159,6 +163,7 @@ class PortfolioAIAssistant(AIAssistant):
         except Exception as e:
             print(f"Assessment failed: {str(e)}")
             return {
+                "urgency_to_act" : 0.0,
                 "buy": 0.0,
                 "sell": 0.0,
                 "hold": 0.0,
@@ -235,20 +240,9 @@ def main():
     """Simple test of PortfolioAIAssistant with tech stocks"""
 
     # Test portfolio with dummy position data
-    test_portfolio = {
-        "GOOG": {  # Alphabet (Google)
-            "purchase_price": 134.50,
-            "quantity": 25,
-            "holding_days": 450,
-            "current_yield": 0.0045
-        },
-        "BAYN.DE": {  # Bayer AG
-            "purchase_price": 45.30,
-            "quantity": 150,
-            "holding_days": 600,
-            "current_yield": 0.026
-        }
-    }
+    with open("./test_data/input_example_portfolio1.json", 'r') as file:
+        test_portfolio = json.load(file)
+
 
     # Initialize assistant with test configuration
     assistant = PortfolioAIAssistant(
