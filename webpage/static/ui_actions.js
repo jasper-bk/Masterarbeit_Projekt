@@ -8,7 +8,7 @@ $(async function () {
     $('.resizable').resizable({ grid: [20, 20], handles: 'n, e, s, w, ne, se, sw, nw', containment: container });
 
     // Urgency Display
-    let urgencyValue = portfolio.getOverallUrgency();
+    let urgencyValue = Math.round(portfolio.getOverallUrgency());
     document.getElementById('urgency-text').textContent = `Urgency: ${urgencyValue}%`;
 
     // Market Info Box
@@ -92,7 +92,7 @@ $(async function () {
     container.innerHTML = '';
 
     portfolio.getStocks().forEach(stock => {
-      const urgencyPercent = Math.round(stock.getUrgency() * 100);
+      const urgencyPercent = Math.round(stock.getUrgency());
       const li = document.createElement('li');
       li.className = 'list-group-item';
       li.textContent = `${stock.getName()} - ${urgencyPercent}%`;

@@ -8,6 +8,10 @@ import json
 app = Flask(__name__, template_folder='webpage/templates', static_folder='webpage/static')
 CORS(app)  # Enable CORS if needed
 
+# Loading test data
+with open("./test_data/analyzed_example_portfolio.json", 'r') as file:
+        portfolio = json.load(file)
+
 ###########
 # Webpage #
 ###########
@@ -28,25 +32,31 @@ def static_files(filename):
 
 @app.route('/api/portfolio')
 def get_portfolio():
-    return jsonify({
-        'overallUrgency': 34,
-        'overallBuy': 70,
-        'overallSell': 20,
-        'overallHold': 10,
+
+    stocks_list = list(portfolio.values())
+
+    portfolio_informations = {
+        'overallUrgency': sum(item['urgency'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
+        'overallBuy': sum(item['buy'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
+        'overallSell': sum(item['sell'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
+        'overallHold': sum(item['hold'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
         'marketSummary': 'Dummy Market Summary',
         'currentOpportunities': 'Sample Opportunities',
         'currentRisks': 'Potential Risks',
         'other': 'Additional Information',
         'languageAssessment': 'Language Analysis'
-    })
+    }
+
+    return jsonify(portfolio_informations)
 
 @app.route('/api/stocks')
 def get_stocks():
 
-    with open("./test_data/analyzed_example_portfolio.json", 'r') as file:
-        test_portfolio = json.load(file)
+    stocks_list = list(portfolio.values())
 
-    return jsonify(list(test_portfolio.values()))
+    stocks_list.sort(key=lambda x: x['urgency'], reverse=True)
+
+    return jsonify(stocks_list)
 
 ###########
 # LLM API #

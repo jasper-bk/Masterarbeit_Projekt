@@ -4,23 +4,47 @@
         "purchase_price": 134.50,
         "quantity": 25,
         "holding_days": 450,
-        "current_yield": 0.0045,
+        "current_yield": 0.45,
 
-        "urgency": 0.3,
-        "buy": 0,
+        "urgency": 30,
+        "buy": 70,
         "sell": 0,
-        "hold": 0
+        "hold": 30
     },
     "BAYN.DE": {
         "name" : "Bayer",
         "purchase_price": 45.30,
         "quantity": 150,
         "holding_days": 600,
-        "current_yield": 0.026,
+        "current_yield": 0.26,
 
-        "urgency": 0.7,
-        "buy": 0,
+        "urgency": 70,
+        "buy": 10,
+        "sell": 40,
+        "hold": 50
+    },
+    "BAS.DE": {
+        "name" : "BASF",
+        "purchase_price": 42.30,
+        "quantity": 10,
+        "holding_days": 800,
+        "current_yield": -0.25,
+
+        "urgency": 50,
+        "buy": 30,
+        "sell": 30,
+        "hold": 40
+    },
+    "DTE.DE": {
+        "name" : "Deutsche Telekom",
+        "purchase_price": 22.30,
+        "quantity": 100,
+        "holding_days": 900,
+        "current_yield": 1.12,
+
+        "urgency": 5,
+        "buy": 70,
         "sell": 0,
-        "hold": 0
+        "hold": 30
     }
 }

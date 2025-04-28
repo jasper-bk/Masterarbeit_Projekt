@@ -70,3 +70,12 @@ cursor: pointer;
     color: red;
     cursor: pointer;
 }
+.thermostat {
+    width: 20px;
+    height: 100%;
+    background: linear-gradient(to bottom, red, blue);
+    border-radius: 10px;
+    margin-right: 0px;
+    left: 0%;
+    position: relative;
+}
