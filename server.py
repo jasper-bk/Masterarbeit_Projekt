@@ -84,7 +84,8 @@ def analyze_portfolio():
         return jsonify({"error": str(e)}), 500
 
 def main():
-    app.run(host='0.0.0.0', port=5000)
+    app.run(debug=True) # for development only
+    # app.run(host='0.0.0.0', port=5000)
 
 if __name__ == '__main__':
     main()

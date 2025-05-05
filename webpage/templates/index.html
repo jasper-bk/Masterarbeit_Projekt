@@ -11,11 +11,26 @@
   </style>
 </head>
 <body>
+
   <!-- Navbar -->
   <nav class="navbar navbar-custom px-3">
     <a class="navbar-brand" href="#">Portfolio Evaluation and Recommendation Dashboard</a>
-    <div class="ms-auto">
-      <a href="#" class="nav-link">
+    <div class="ms-auto d-flex align-items-center">
+      <button id="refreshAllBtn" class="btn btn-primary me-2" title="Refresh all">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
+          <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 1 .908-.417A4 4 0 1 0 8 4v1.5a.5.5 0 0 1-1 0V3.707l-.146.147a.5.5 0 0 1-.708-.708l1-1a.498.498 0 0 1 .708 0l1 1a.5.5 0 0 1-.708.708L8 3.707V5.5a.5.5 0 0 1-1 0V3z"/>
+        </svg>
+        Refresh all
+      </button>
+
+      <button id="refreshBtn" class="btn btn-secondary me-3" title="Refresh current">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
+          <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 1 .908-.417A4 4 0 1 0 8 4v1.5a.5.5 0 0 1-1 0V3.707l-.146.147a.5.5 0 0 1-.708-.708l1-1a.498.498 0 0 1 .708 0l1 1a.5.5 0 0 1-.708.708L8 3.707V5.5a.5.5 0 0 1-1 0V3z"/>
+        </svg>
+        Refresh
+      </button>
+
+      <a href="#" class="nav-link" id="settingsButton" title="Settings">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" class="bi bi-gear" viewBox="0 0 16 16">
           <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
           <path d="M9.796 1.343c-.527-1.06-1.965-1.06-2.492 0l-.094.19a1.007 1.007 0 0 1-1.356.432l-.183-.098c-1.07-.57-2.286.646-1.716 1.716l.098.183a1.007 1.007 0 0 1-.432 1.356l-.19.094c-1.06.527-1.06 1.965 0 2.492l.19.094a1.007 1.007 0 0 1 .432 1.356l-.098.183c-.57 1.07.646 2.286 1.716 1.716l.183-.098a1.007 1.007 0 0 1 1.356.432l.094.19c.527 1.06 1.965 1.06 2.492 0l.094-.19a1.007 1.007 0 0 1 1.356-.432l.183.098c1.07.57 2.286-.646 1.716-1.716l-.098-.183a1.007 1.007 0 0 1 .432-1.356l.19-.094c1.06-.527 1.06-1.965 0-2.492l-.19-.094a1.007 1.007 0 0 1-.432-1.356l.098-.183c.57-1.07-.646-2.286-1.716-1.716l-.183.098a1.007 1.007 0 0 1-1.356-.432l-.094-.19z"/>
@@ -68,7 +83,7 @@
                     <div class="light yellow" id="light-yellow"></div>
                     <div class="light green" id="light-green"></div>
                   </div>
-                  <div class="urgency-text" id="urgency-text">Urgency: 34%</div>
+                  <div class="urgency-text" id="urgency-text">Urgency: 0%</div>
                 </div>
                 <canvas id="pieChart" width="120" height="120"></canvas>
               </div>
@@ -81,6 +96,34 @@
             </div>
           </div>
 
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="settingsModalLabel">Manage Portfolios</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <label for="jsonSelect" class="form-label">Available Portfolio Files:</label>
+          <select class="form-select mb-3" id="jsonSelect">
+            <!-- Filled dynamically -->
+          </select>
+
+          <div class="mb-3">
+            <label for="jsonUpload" class="form-label">Upload New Portfolio JSON:</label>
+            <input class="form-control" type="file" id="jsonUpload" accept=".json">
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <button class="btn btn-primary" id="uploadJsonBtn">Upload</button>
+            <button class="btn btn-danger" id="deleteJsonBtn">Delete Selected</button>
+          </div>
         </div>
       </div>
     </div>
