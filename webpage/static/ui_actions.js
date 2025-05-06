@@ -42,6 +42,40 @@ function initializeSettingsModal() {
   });
 }
 
+function initializeChatWidget() {
+  const chatToggle = document.getElementById('chat-toggle');
+  const chatWindow = document.getElementById('chat-window');
+  const chatClose = document.getElementById('chat-close');
+  const chatSubmit = document.getElementById('chat-submit');
+  const chatInput = document.getElementById('chat-input');
+  const chatMessages = document.getElementById('chat-messages');
+
+  chatToggle.addEventListener('click', () => {
+    chatWindow.classList.toggle('d-none');
+  });
+
+  chatClose.addEventListener('click', () => {
+    chatWindow.classList.add('d-none');
+  });
+
+  chatSubmit.addEventListener('click', () => {
+    const message = chatInput.value.trim();
+    if (message !== '') {
+      console.log('Chat message:', message);
+
+      const msgDiv = document.createElement('div');
+      msgDiv.textContent = message;
+      msgDiv.className = 'mb-2 text-end text-primary';
+      chatMessages.appendChild(msgDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      chatInput.value = '';
+    }
+  });
+
+  //To-Do: Planned to Send messages with current context to LLM and display response
+}
+
 // Refresh dropdown with current file list
 function updateJsonDropdown() {
   const select = $('#jsonSelect');
@@ -57,6 +91,7 @@ $(async function () {
   await ApiService.initialize();
   initializeUI();
   initializeSettingsModal();
+  initializeChatWidget();
   await renderDashboard();
 
   // Button events
@@ -150,7 +185,7 @@ async function handleRefresh(button, action) {
 
 // Open a new tab for a specific stock
 function openStockTab(stockName) {
-  const tabId = stockName.replace(/\s+/g, '-').toLowerCase();
+  const tabId = stockName.replace(/\s+/g, '-').toLowerCase(); // Does not work with all names. Needs to be revised at some point
   if (!document.getElementById(`tab-${tabId}`)) {
     const closeBtn = `<span class="close-tab" onclick="closeTab('${tabId}')">&times;</span>`;
     const newTab = document.createElement('li');
@@ -162,7 +197,58 @@ function openStockTab(stockName) {
     newTabPane.classList.add('tab-pane', 'fade');
     newTabPane.id = `tab-${tabId}`;
     newTabPane.setAttribute('role', 'tabpanel');
-    newTabPane.innerHTML = `<div class="box">Detailed info for ${stockName}</div>`;
+    newTabPane.innerHTML = newTabPane.innerHTML = `
+      <div class="tab-pane fade show active" role="tabpanel" aria-labelledby="overview-tab">
+        <div class="row">
+
+          <!-- Market Info Box -->
+          <div class="col-md-3 box draggable resizable">
+            <h4>${stockName} Details:</h4>
+            <strong>Personal Information:</strong><br/>
+            <span>Quantity: 0</span><br/>
+            <span>Value: €0</span><br/>
+            <span>Current Return: +0.0%</span><br/>
+            ...
+            <hr/>
+            <strong>Assessment:</strong><br/>
+            <span>Potential Upside: 0%</span><br/>
+            <span>Potential Downside: 0%</span><br/>
+
+            <!-- To-Do: Visualization of upside and downside -->
+          </div>
+
+          <!-- Quick Overview -->
+          <div class="col-md-6">
+            <div class="col-md-8 box draggable resizable">
+              <h5>${stockName} Overview</h5>
+              <div class="d-flex align-items-center">
+                <div class="traffic-light-container">
+                  <div class="traffic-light">
+                    <div class="light red" id="light-red-stock-${tabId}"></div>
+                    <div class="light yellow" id="light-yellow-stock-${tabId}"></div>
+                    <div class="light green" id="light-green-stock-${tabId}"></div>
+                  </div>
+                  <div class="urgency-text" id="urgency-text">Urgency: 0%</div>
+                </div>
+                <canvas id="pieChart-stock-${tabId}" width="120" height="120"></canvas>
+              </div>
+            </div>
+
+            <!-- Textual Evaluation -->
+            <div class="col-md-10 box draggable resizable">
+              <h6>Natural language assessment of the single stock with explanation:</h6>
+              <p class="text-primary" id="explanation-evaluation-text-stock-${tabId}">Given the current market situation, it is recommended to ...</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    `;
+
+    // To-Do: Make Pie-Chart functional in Stock view
+    // To-Do: Being able to fill data from API
+    // To-Do: Being able to move tiles like in the Portfolio overview
+
     document.getElementById('dashboardTabsContent').appendChild(newTabPane);
   }
   bootstrap.Tab.getOrCreateInstance(document.querySelector(`#tab-${tabId}-tab`)).show();

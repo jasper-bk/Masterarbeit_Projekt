@@ -2,12 +2,14 @@ body {
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
+
 .navbar-custom {
     background-color: #000;
 }
 .navbar-custom .navbar-brand, .navbar-custom .nav-link {
     color: #fff;
 }
+
 .box {
     border: 2px solid #007bff;
     border-radius: 10px;
@@ -17,11 +19,59 @@ body {
     background: white;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
+
+h5, h6 {
+    color: #343a40;
+}
+
+#urgency-list ul li {
+background-color: #e9f5ff;
+border-left: 5px solid #007bff;
+cursor: pointer;
+}
+
+.urgency-text {
+    margin-left: 15px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0069d9;
+}
+
+/* To-Do: Not used everywhere yet. Unify later on*/
+.text-primary {
+    color: #0069d9 !important;
+}
+
+.tab-content {
+    margin-top: 20px;
+}
+
+.close-tab {
+    margin-left: 8px;
+    color: red;
+    cursor: pointer;
+}
+
+
+/* Thermostat not yet used */
+.thermostat {
+    width: 20px;
+    height: 100%;
+    background: linear-gradient(to bottom, red, blue);
+    border-radius: 10px;
+    margin-right: 0px;
+    left: 0%;
+    position: relative;
+}
+
+
+/* Traffic Light */
 .traffic-light-container {
     display: flex;
     align-items: center;
     margin-right: 20px;
 }
+
 .traffic-light {
     display: flex;
     flex-direction: column;
@@ -34,6 +84,7 @@ body {
     padding: 5px;
     background-color: #fff;
 }
+
 .light {
     width: 30px;
     height: 30px;
@@ -41,41 +92,66 @@ body {
     margin: 5px 0;
     opacity: 0.2;
 }
+
 .green { background-color: #28a745; }
 .yellow { background-color: #ffc107; }
 .red { background-color: #dc3545; }
 .light.active { opacity: 1; }
-h5, h6 {
-    color: #343a40;
-}
-#urgency-list ul li {
-background-color: #e9f5ff;
-border-left: 5px solid #007bff;
-cursor: pointer;
-}
-.text-primary {
-    color: #0069d9 !important;
-}
-.urgency-text {
-    margin-left: 15px;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #0069d9;
-}
-.tab-content {
-    margin-top: 20px;
-}
-.close-tab {
-    margin-left: 8px;
-    color: red;
+
+
+
+/* Chat Style */
+
+.chat-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #0d6efd;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 25px;
     cursor: pointer;
+    z-index: 1050;
+    font-weight: bold;
 }
-.thermostat {
-    width: 20px;
-    height: 100%;
-    background: linear-gradient(to bottom, red, blue);
+
+.chat-window {
+    position: fixed;
+    bottom: 70px;
+    right: 20px;
+    width: 300px;
+    height: 400px;
+    background-color: white;
+    border: 1px solid #ccc;
     border-radius: 10px;
-    margin-right: 0px;
-    left: 0%;
-    position: relative;
+    display: flex;
+    flex-direction: column;
+    z-index: 1060;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.chat-header {
+    background-color: #0d6efd;
+    color: white;
+    padding: 10px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    font-size: 0.9rem;
+    border-top: 1px solid #dee2e6;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.chat-input-container {
+    display: flex;
+    gap: 5px;
+    padding: 10px;
 }

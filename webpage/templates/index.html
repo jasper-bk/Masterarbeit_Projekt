@@ -49,6 +49,7 @@
 
     <!-- Tab Content -->
     <div class="tab-content" id="dashboardTabsContent">
+
       <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
         <div class="row">
           <!-- Left Sidebar -->
@@ -75,7 +76,7 @@
           <!-- Quick Overview -->
           <div class="col-md-6">
             <div class="col-md-8 box draggable resizable" id="quick-overview">
-              <h5>Quick Overview</h5>
+              <h5>Portfolio Quick Overview</h5>
               <div class="d-flex align-items-center">
                 <div class="traffic-light-container">
                   <div class="traffic-light">
@@ -98,6 +99,7 @@
 
         </div>
       </div>
+
     </div>
   </div>
 
@@ -126,6 +128,23 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Chat Widget -->
+  <div id="chat-toggle" class="chat-toggle">
+    &#128172; Chat
+  </div>
+
+  <div id="chat-window" class="chat-window d-none">
+    <div class="chat-header">
+      <span>Assistant</span>
+      <button id="chat-close" class="btn-close btn-sm"></button>
+    </div>
+    <div id="chat-messages" class="chat-messages"></div>
+    <div class="chat-input-container">
+      <input type="text" id="chat-input" class="form-control" placeholder="Type a message..." />
+      <button id="chat-submit" class="btn btn-primary">Send</button>
     </div>
   </div>
 
