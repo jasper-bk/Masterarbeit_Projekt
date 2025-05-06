@@ -73,7 +73,7 @@ function initializeChatWidget() {
     }
   });
 
-  //To-Do: Planned to Send messages with current context to LLM and display response
+  //To-Do: Planned to send messages with current context to LLM and display response
 }
 
 // Refresh dropdown with current file list
@@ -201,23 +201,23 @@ function openStockTab(stockName) {
       <div class="tab-pane fade show active" role="tabpanel" aria-labelledby="overview-tab">
         <div class="row">
 
-          <!-- Market Info Box -->
+          <!-- Stock Info Box -->
           <div class="col-md-3 box draggable resizable">
             <h4>${stockName} Details:</h4>
             <strong>Personal Information:</strong><br/>
-            <span>Quantity: 0</span><br/>
-            <span>Value: €0</span><br/>
-            <span>Current Return: +0.0%</span><br/>
+            <span>Quantity: <span class="text-primary" id="quantity-stock-${tabId}-text">0</span></span><br/>
+            <span>Value: <span class="text-primary" id="value-stock-${tabId}-text">€0</span></span><br/>
+            <span>Current Return: <span class="text-primary" id="yield-stock-${tabId}-text">+0.0%</span></span><br/>
             ...
             <hr/>
             <strong>Assessment:</strong><br/>
-            <span>Potential Upside: 0%</span><br/>
-            <span>Potential Downside: 0%</span><br/>
+            <span>Potential Upside: <span class="text-primary" id="upside-stock-${tabId}-text">+0%</span></span><br/>
+            <span>Potential Downside: <span class="text-primary" id="downside-stock-${tabId}-text">+0%</span></span><br/>
 
             <!-- To-Do: Visualization of upside and downside -->
           </div>
 
-          <!-- Quick Overview -->
+          <!-- Stock Quick Overview -->
           <div class="col-md-6">
             <div class="col-md-8 box draggable resizable">
               <h5>${stockName} Overview</h5>
@@ -228,7 +228,7 @@ function openStockTab(stockName) {
                     <div class="light yellow" id="light-yellow-stock-${tabId}"></div>
                     <div class="light green" id="light-green-stock-${tabId}"></div>
                   </div>
-                  <div class="urgency-text" id="urgency-text">Urgency: 0%</div>
+                  <div class="urgency-text" id="urgency-text-stock-${tabId}">Urgency: 0%</div>
                 </div>
                 <canvas id="pieChart-stock-${tabId}" width="120" height="120"></canvas>
               </div>
