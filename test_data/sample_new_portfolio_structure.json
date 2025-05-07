@@ -1,0 +1,99 @@
+{
+
+    "_comment__to_be_removed_later" : "To-Do: Code still needs to be adapted to this format",
+
+    "portfolio_name" : "Sample Portfolio",
+    "investor_goals" : "To be specified",
+
+    "assets" : {
+        "GOOG": {
+            "name" : "Alphabet",
+            "purchase_price": 134.50,
+            "quantity": 25,
+            "holding_days": 450,
+            "current_yield": 0.45,
+
+            "evaluation_results" : {
+                "urgency": 30,
+                "buy": 70,
+                "sell": 0,
+                "hold": 30,
+
+                "potential_upside": 10,
+                "potential_downside" : 5,
+                "explanation_evaluation" : "Sample Explanation"
+            }
+        },
+        "BAYN.DE": {
+            "name" : "Bayer",
+            "purchase_price": 45.30,
+            "quantity": 150,
+            "holding_days": 600,
+            "current_yield": 0.26,
+
+            "evaluation_results" : {
+                "urgency": 70,
+                "buy": 10,
+                "sell": 40,
+                "hold": 50,
+
+                "potential_upside": 10,
+                "potential_downside" : 5,
+                "explanation_evaluation" : "Sample Explanation"
+            }
+        },
+        "BAS.DE": {
+            "name" : "BASF",
+            "purchase_price": 42.30,
+            "quantity": 10,
+            "holding_days": 800,
+            "current_yield": -0.25,
+
+            "evaluation_results" : {
+                "urgency": 50,
+                "buy": 30,
+                "sell": 30,
+                "hold": 40,
+
+                "potential_upside": 10,
+                "potential_downside" : 5,
+                "explanation_evaluation" : "Sample Explanation"
+            }
+        },
+        "DTE.DE": {
+            "name" : "Deutsche Telekom",
+            "purchase_price": 22.30,
+            "quantity": 100,
+            "holding_days": 900,
+            "current_yield": 1.12,
+
+            "evaluation_results" : {
+                "urgency": 5,
+                "buy": 70,
+                "sell": 0,
+                "hold": 30,
+
+                "potential_upside": 10,
+                "potential_downside" : 5,
+                "explanation_evaluation" : "Sample Explanation"
+            }
+        }
+    },
+
+    "portfolio_evaluation_results" : {
+
+        "_comment__to_be_removed_later" : "Actually those numeric values do not need to be set here, because they can be just calculated from the stocks list",
+        "overall_urgency" : 20,
+        "overall_buy" : 60,
+        "overall_sell" : 20,
+        "overall_hold" : 10,
+
+
+
+        "market_summary" : "Dummy Market Summary",
+        "current_opportunities" : "Sample Opportunities",
+        "current_risks" : "Potential risks",
+        "other" : "Additional informations",
+        "explanation_evaluation" : "Long Sample Explanation for all those values"
+    }
+}

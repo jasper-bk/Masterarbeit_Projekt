@@ -125,6 +125,147 @@ function initializeUI() {
   });
 }
 
+class StockTab {
+  /**
+   * @param {Object} stock  — an object holding all your values, e.g.
+   *    { name, quantity, value, currentReturn, upside, downside, urgency, sell, hold, buy, assessmentText }
+   */
+  constructor(stock) {
+    this.stock = stock;
+    this.tabId = stock.name.replace(/\s+/g, '-').toLowerCase();
+  }
+
+  /**
+   * Creates the <li> and <div class="tab-pane">,
+   * injects them into the DOM and sets up the chart & traffic light.
+   */
+  init() {
+    // 1) Create tab button
+    if (!document.getElementById(`tab-${this.tabId}-tab`)) {
+      const closeBtn = `<span class="close-tab" onclick="closeTab('${this.tabId}')">&times;</span>`;
+      const li = document.createElement('li');
+      li.classList.add('nav-item');
+      li.innerHTML = `
+        <button class="nav-link"
+                id="tab-${this.tabId}-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#tab-${this.tabId}"
+                type="button" role="tab">
+          ${this.stock.name} ${closeBtn}
+        </button>`;
+      document.getElementById('dashboardTabs').appendChild(li);
+
+      // 2) Create tab content pane
+      const pane = document.createElement('div');
+      pane.classList.add('tab-pane', 'fade');
+      pane.id = `tab-${this.tabId}`;
+      pane.setAttribute('role', 'tabpanel');
+      pane.innerHTML = this._template();
+      document.getElementById('dashboardTabsContent').appendChild(pane);
+
+      // 3) After injecting HTML, wire up components:
+      this._renderValues();
+      this._renderTrafficLight();
+      this._renderChart();
+    }
+
+    // 4) Show it
+    bootstrap.Tab.getOrCreateInstance(
+      document.getElementById(`tab-${this.tabId}-tab`)
+    ).show();
+  }
+
+  /** Returns the HTML string for this stock’s dashboard */
+  _template() {
+    return `
+      <div class="container-fluid p-3">
+        <div class="row">
+          <!-- Stock Info Box -->
+          <div class="col-md-3 box draggable resizable">
+            <h4>${this.stock.name} Details</h4>
+            <strong>Personal Information:</strong><br/>
+            <span>Quantity: <span class="text-primary" id="quantity-${this.tabId}">0</span></span><br/>
+            <span>Value: <span class="text-primary" id="value-${this.tabId}">€0</span></span><br/>
+            <span>Current Return: <span class="text-primary" id="yield-${this.tabId}">+0.0%</span></span><br/>
+            <hr/>
+            <strong>Assessment:</strong><br/>
+            <span>Potential Upside: <span class="text-primary" id="upside-${this.tabId}">+0%</span></span><br/>
+            <span>Potential Downside: <span class="text-primary" id="downside-${this.tabId}">+0%</span></span><br/>
+          </div>
+
+          <!-- Stock Quick Overview -->
+          <div class="col-md-6">
+            <div class="col-md-8 box draggable resizable">
+              <h5>${this.stock.name} Overview</h5>
+              <div class="d-flex align-items-center">
+                <div class="traffic-light-container me-3">
+                  <div class="traffic-light">
+                    <div class="light red"   id="light-red-${this.tabId}"></div>
+                    <div class="light yellow" id="light-yellow-${this.tabId}"></div>
+                    <div class="light green"  id="light-green-${this.tabId}"></div>
+                  </div>
+                  <div class="urgency-text" id="urgency-${this.tabId}">Urgency: 0%</div>
+                </div>
+                <canvas id="pieChart-${this.tabId}" width="120" height="120"></canvas>
+              </div>
+            </div>
+
+            <!-- Textual Evaluation -->
+            <div class="col-md-10 box draggable resizable mt-3">
+              <h6>Natural language assessment:</h6>
+              <p class="text-primary" id="assessment-${this.tabId}">
+                ...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /** Fill in all numeric/text fields from this.stock */
+  _renderValues() {
+    const s = this.stock, id = this.tabId;
+    document.getElementById(`quantity-${id}`).textContent = s.quantity;
+    document.getElementById(`value-${id}`).textContent = `€${s.value}`;
+    document.getElementById(`yield-${id}`).textContent = s.currentReturn;
+    document.getElementById(`upside-${id}`).textContent = s.upside;
+    document.getElementById(`downside-${id}`).textContent = s.downside;
+    document.getElementById(`urgency-${id}`).textContent = `Urgency: ${s.urgency}%`;
+    document.getElementById(`assessment-${id}`).textContent = s.assessmentText;
+  }
+
+  /** Activate the correct traffic-light color */
+  _renderTrafficLight() {
+    const u = this.stock.urgency, id = this.tabId;
+    [ 'red', 'yellow', 'green' ].forEach(color =>
+      document.getElementById(`light-${color}-${id}`).classList.remove('active')
+    );
+    if (u >= 66) document.getElementById(`light-red-${id}`).classList.add('active');
+    else if (u >= 33) document.getElementById(`light-yellow-${id}`).classList.add('active');
+    else document.getElementById(`light-green-${id}`).classList.add('active');
+  }
+
+  /** Draw the pie chart using Chart.js */
+  _renderChart() {
+    const id = this.tabId;
+    const ctx = document.getElementById(`pieChart-${id}`).getContext('2d');
+    if (this._chart) this._chart.destroy();
+    this._chart = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: ['Sell','Hold','Buy'],
+        datasets: [{
+          data: [this.stock.sell, this.stock.hold, this.stock.buy],
+          backgroundColor: ['#dc3545','#6c757d','#28a745']
+        }]
+      },
+      options: { responsive: false, plugins: { legend: { display: false } } }
+    });
+  }
+}
+
+
 // Main dashboard rendering logic
 async function renderDashboard() {
   // Update urgency indicator
@@ -185,73 +326,24 @@ async function handleRefresh(button, action) {
 
 // Open a new tab for a specific stock
 function openStockTab(stockName) {
-  const tabId = stockName.replace(/\s+/g, '-').toLowerCase(); // Does not work with all names. Needs to be revised at some point
-  if (!document.getElementById(`tab-${tabId}`)) {
-    const closeBtn = `<span class="close-tab" onclick="closeTab('${tabId}')">&times;</span>`;
-    const newTab = document.createElement('li');
-    newTab.classList.add('nav-item');
-    newTab.innerHTML = `<button class="nav-link" id="tab-${tabId}-tab" data-bs-toggle="tab" data-bs-target="#tab-${tabId}" type="button" role="tab">${stockName} ${closeBtn}</button>`;
-    document.getElementById('dashboardTabs').appendChild(newTab);
+  // Here you’d look up the real stock object by name:
+  const stockObj = {
+    name: stockName,
+    quantity: 10,
+    value: 1000,
+    currentReturn: '+12.4%',
+    upside: '+20%',
+    downside: '+10%',
+    urgency: 50,
+    sell: 20,
+    hold: 30,
+    buy: 50,
+    assessmentText: `Given the current market situation, it is recommended to re-buy ${stockName}.`
+  };
 
-    const newTabPane = document.createElement('div');
-    newTabPane.classList.add('tab-pane', 'fade');
-    newTabPane.id = `tab-${tabId}`;
-    newTabPane.setAttribute('role', 'tabpanel');
-    newTabPane.innerHTML = newTabPane.innerHTML = `
-      <div class="tab-pane fade show active" role="tabpanel" aria-labelledby="overview-tab">
-        <div class="row">
-
-          <!-- Stock Info Box -->
-          <div class="col-md-3 box draggable resizable">
-            <h4>${stockName} Details:</h4>
-            <strong>Personal Information:</strong><br/>
-            <span>Quantity: <span class="text-primary" id="quantity-stock-${tabId}-text">0</span></span><br/>
-            <span>Value: <span class="text-primary" id="value-stock-${tabId}-text">€0</span></span><br/>
-            <span>Current Return: <span class="text-primary" id="yield-stock-${tabId}-text">+0.0%</span></span><br/>
-            ...
-            <hr/>
-            <strong>Assessment:</strong><br/>
-            <span>Potential Upside: <span class="text-primary" id="upside-stock-${tabId}-text">+0%</span></span><br/>
-            <span>Potential Downside: <span class="text-primary" id="downside-stock-${tabId}-text">+0%</span></span><br/>
-
-            <!-- To-Do: Visualization of upside and downside -->
-          </div>
-
-          <!-- Stock Quick Overview -->
-          <div class="col-md-6">
-            <div class="col-md-8 box draggable resizable">
-              <h5>${stockName} Overview</h5>
-              <div class="d-flex align-items-center">
-                <div class="traffic-light-container">
-                  <div class="traffic-light">
-                    <div class="light red" id="light-red-stock-${tabId}"></div>
-                    <div class="light yellow" id="light-yellow-stock-${tabId}"></div>
-                    <div class="light green" id="light-green-stock-${tabId}"></div>
-                  </div>
-                  <div class="urgency-text" id="urgency-text-stock-${tabId}">Urgency: 0%</div>
-                </div>
-                <canvas id="pieChart-stock-${tabId}" width="120" height="120"></canvas>
-              </div>
-            </div>
-
-            <!-- Textual Evaluation -->
-            <div class="col-md-10 box draggable resizable">
-              <h6>Natural language assessment of the single stock with explanation:</h6>
-              <p class="text-primary" id="explanation-evaluation-text-stock-${tabId}">Given the current market situation, it is recommended to ...</p>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    `;
-
-    // To-Do: Make Pie-Chart functional in Stock view
-    // To-Do: Being able to fill data from API
-    // To-Do: Being able to move tiles like in the Portfolio overview
-
-    document.getElementById('dashboardTabsContent').appendChild(newTabPane);
-  }
-  bootstrap.Tab.getOrCreateInstance(document.querySelector(`#tab-${tabId}-tab`)).show();
+  // Instantiate and initialize the tab
+  const tab = new StockTab(stockObj);
+  tab.init();
 }
 
 // Close an existing stock tab
