@@ -5,21 +5,42 @@ class Stock {
     this._hold = 0;
     this._sell = 0;
     this._buy = 0;
+    this._quantity = 0;
+    this._buyInPrice = 0;
+    this._currentReturn = 0;
+    this._potentialUpside = 0;
+    this._potentialDownside = 0;
+    this._languageAssessment = '';
   }
 
+  // Getter
   getName() { return this._name; }
   getUrgency() { return this._urgency; }
   getHold() { return this._hold; }
   getSell() { return this._sell; }
   getBuy() { return this._buy; }
+  getQuantity() { return this._quantity; }
+  getBuyInPrice() { return this._buyInPrice; }
+  getCurrentReturn() { return this._currentReturn; }
+  getPotentialUpside() { return this._potentialUpside; }
+  getPotentialDownside() { return this._potentialDownside; }
 
+  getLanguageAssessment() { return this._languageAssessment; }
+
+  // Setter
   setName(name) { this._name = name; }
   setUrgency(urgency) { this._urgency = urgency; }
   setHold(hold) { this._hold = hold; }
   setSell(sell) { this._sell = sell; }
   setBuy(buy) { this._buy = buy; }
+  setQuantity(quantity) { this._quantity = quantity; }
+  setBuyInPrice(buyInPrice) { this._buyInPrice = buyInPrice; }
+  setCurrentReturn(currentReturn) { this._currentReturn = currentReturn; }
+  setPotentialUpside(potentialUpside) { this._potentialUpside = potentialUpside; }
+  setPotentialDownside(potentialDownside) { this._potentialDownside = potentialDownside; }
+  setLanguageAssessment(languageAssessment) { this._languageAssessment = languageAssessment; }
 
-  //To-Do: add other important setters and getters
+   //To-Do: add other important setters and getters
 }
 
 class Portfolio {

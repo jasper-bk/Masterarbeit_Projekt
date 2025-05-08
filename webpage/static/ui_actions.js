@@ -325,24 +325,25 @@ async function handleRefresh(button, action) {
 }
 
 // Open a new tab for a specific stock
-function openStockTab(stockName) {
+function openStockTab(stockObj) {
   // Here you’d look up the real stock object by name:
-  const stockObj = {
-    name: stockName,
-    quantity: 10,
-    value: 1000,
-    currentReturn: '+12.4%',
-    upside: '+20%',
-    downside: '+10%',
-    urgency: 50,
-    sell: 20,
-    hold: 30,
-    buy: 50,
-    assessmentText: `Given the current market situation, it is recommended to re-buy ${stockName}.`
+  const stockTabObj = {
+    name: stockObj.getName(),
+    quantity: stockObj.getQuantity(),
+    value: stockObj.getQuantity() * stockObj.getBuyInPrice(),
+    currentReturn: stockObj.getCurrentReturn(),
+
+    upside: "+" + stockObj.getPotentialUpside() + "%",
+    downside: "- " + stockObj.getPotentialDownside() + "%",
+    urgency: stockObj.getUrgency(),
+    sell: stockObj.getSell(),
+    hold: stockObj.getHold(),
+    buy: stockObj.getBuy(),
+    assessmentText: stockObj.getLanguageAssessment()
   };
 
   // Instantiate and initialize the tab
-  const tab = new StockTab(stockObj);
+  const tab = new StockTab(stockTabObj);
   tab.init();
 }
 
@@ -369,7 +370,7 @@ function renderUrgencyList() {
     const li = document.createElement('li');
     li.className = 'list-group-item';
     li.textContent = `${stock.getName()} - ${urgencyPercent}%`;
-    li.onclick = () => openStockTab(stock.getName());
+    li.onclick = () => openStockTab(stock);
     container.appendChild(li);
   });
 }

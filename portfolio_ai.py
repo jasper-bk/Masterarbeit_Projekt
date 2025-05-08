@@ -117,7 +117,7 @@ class PortfolioAIAssistant(AIAssistant):
             "hold": <percentage>,
             "rationale": "<detailed explanation>"
         }}
-        Ensure that the percentages sum to 100%.
+        Ensure that the percentages for buy, sell and hold sum to 100%.
         """
 
         try:
@@ -188,9 +188,15 @@ class PortfolioAIAssistant(AIAssistant):
         """
         results = {}
 
-        for security_id, attributes in portfolio.items():
+        portfolio_assets = portfolio["assets"]
+
+        for security_id, attributes in portfolio_assets.items():
             quant_data = self.get_quantitative_data(security_id)
             qual_data = self.get_qualitative_data(security_id)
+
+            # Evalutation results should not be passed
+            key_to_exclude = 'evaluation_results'
+            attributes = {key: value for key, value in attributes.items() if key != key_to_exclude}
 
             assessment = self.assess_security(
                 security_data={"quantitative": quant_data, "qualitative": qual_data},
@@ -240,7 +246,7 @@ def main():
     """Simple test of PortfolioAIAssistant with tech stocks"""
 
     # Test portfolio with dummy position data
-    with open("./test_data/input_example_portfolio1.json", 'r') as file:
+    with open("./test_data/sample_new_portfolio_structure.json", 'r') as file:
         test_portfolio = json.load(file)
 
 

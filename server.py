@@ -9,7 +9,7 @@ app = Flask(__name__, template_folder='webpage/templates', static_folder='webpag
 CORS(app)  # Enable CORS if needed
 
 # Loading test data
-with open("./test_data/analyzed_example_portfolio.json", 'r') as file:
+with open("./test_data/sample_new_portfolio_structure.json", 'r') as file:
         portfolio = json.load(file)
 
 ###########
@@ -33,13 +33,16 @@ def static_files(filename):
 @app.route('/api/portfolio')
 def get_portfolio():
 
-    stocks_list = list(portfolio.values())
+    stocks_list = list(portfolio["assets"].values())
 
+    # Idea: Just pass the whole portfolio JSON to the frontend and do all calculations, sorting there. JSON could be just reloaded
+
+    # To-Do: Build a useful check to handle the case that the stock is not yet evaluated and therefore the key does not exist
     portfolio_informations = {
-        'overallUrgency': sum(item['urgency'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
-        'overallBuy': sum(item['buy'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
-        'overallSell': sum(item['sell'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
-        'overallHold': sum(item['hold'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
+        'overallUrgency': sum(item["evaluation_results"]['urgency'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
+        'overallBuy': sum(item["evaluation_results"]['buy'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
+        'overallSell': sum(item["evaluation_results"]['sell'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
+        'overallHold': sum(item["evaluation_results"]['hold'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
         'marketSummary': 'Dummy Market Summary',
         'currentOpportunities': 'Sample Opportunities',
         'currentRisks': 'Potential Risks',
@@ -52,9 +55,10 @@ def get_portfolio():
 @app.route('/api/stocks')
 def get_stocks():
 
-    stocks_list = list(portfolio.values())
+    stocks_list = list(portfolio["assets"].values())
 
-    stocks_list.sort(key=lambda x: x['urgency'], reverse=True)
+    # To-Do: Also build a way to handle case that the stock is not yet evaluated
+    stocks_list.sort(key=lambda x: x["evaluation_results"]['urgency'], reverse=True)
 
     return jsonify(stocks_list)
 

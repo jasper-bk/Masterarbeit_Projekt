@@ -23,13 +23,24 @@ class ApiService {
       const response = await fetch('/api/stocks');
       const stocksData = await response.json();
 
+      console.log('Debug - StockData:', (stocksData));
+
       portfolio.getStocks().splice(0); // Clear existing stocks
       stocksData.forEach(stockData => {
         const stock = new Stock(stockData.name);
-        stock.setUrgency(stockData.urgency);
-        stock.setBuy(stockData.buy);
-        stock.setSell(stockData.sell);
-        stock.setHold(stockData.hold);
+
+        stock.setQuantity(stockData.quantity);
+        stock.setBuyInPrice(stockData.purchase_price);
+        stock.setCurrentReturn(stockData.current_yield);
+
+        stock.setUrgency(stockData.evaluation_results.urgency);
+        stock.setBuy(stockData.evaluation_results.buy);
+        stock.setSell(stockData.evaluation_results.sell);
+        stock.setHold(stockData.evaluation_results.hold);
+        stock.setPotentialUpside(stockData.evaluation_results.potential_upside);
+        stock.setPotentialDownside(stockData.evaluation_results.potential_downside);
+        stock.setLanguageAssessment(stockData.evaluation_results.explanation_evaluation);
+
         portfolio.addStock(stock);
       });
     } catch (error) {
