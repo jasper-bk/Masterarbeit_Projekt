@@ -81,15 +81,6 @@
     },
 
     "portfolio_evaluation_results" : {
-
-        "_comment__to_be_removed_later" : "Actually those numeric values do not need to be set here, because they can be just calculated from the stocks list",
-        "overall_urgency" : 20,
-        "overall_buy" : 60,
-        "overall_sell" : 20,
-        "overall_hold" : 10,
-
-
-
         "market_summary" : "Dummy Market Summary",
         "current_opportunities" : "Sample Opportunities",
         "current_risks" : "Potential risks",

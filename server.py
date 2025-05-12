@@ -3,6 +3,7 @@
 from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
 from llm import AIAssistant
+from portfolio_ai import PortfolioAIAssistant
 import json
 
 app = Flask(__name__, template_folder='webpage/templates', static_folder='webpage/static')
@@ -10,7 +11,7 @@ CORS(app)  # Enable CORS if needed
 
 # Loading test data
 with open("./test_data/sample_new_portfolio_structure.json", 'r') as file:
-        portfolio = json.load(file)
+    portfolio = json.load(file)
 
 ###########
 # Webpage #
@@ -62,11 +63,52 @@ def get_stocks():
 
     return jsonify(stocks_list)
 
-###########
-# LLM API #
-###########
+#####################
+# Portfolio LLM API #
+#####################
 
-@app.route('/simple-llm-request', methods=['POST'])
+@app.route('/api/evaluate-full-portfolio')
+def evaluate_full_portfolio():
+
+    assistant = PortfolioAIAssistant(
+        provider="ollama",
+        model="deepseek-r1:14b"
+    )
+
+    # To-Do: make portfolio variable public available
+    # Maybe via the PortfolioAIAssistant object?
+
+    try:
+        portfolio = assistant.evaluate_portfolio(portfolio)
+        response = {"response" : "Portfolio has been sucessfully evaluated."}
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    return jsonify(response)
+
+@app.route('/api/evaluate-single-asset/<path:identifier>')
+def evaluate_single_asset(identifier):
+
+    assistant = PortfolioAIAssistant(
+        provider="ollama",
+        model="deepseek-r1:14b"
+    )
+
+    try:
+
+        #To-Do: Needs to be implemented
+        response = {"response" : "Not yet implemented!"}
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    return jsonify(response)
+
+##################
+# Simple LLM API #
+##################
+
+@app.route('/api/simple-llm-request', methods=['POST'])
 def analyze_portfolio():
     """API endpoint for simple llm request"""
     data = request.json

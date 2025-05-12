@@ -1,273 +1,168 @@
 #!/usr/bin/env python3
 
-# To-Do:
-# Simplify code
-# Restrucure and order code
-# Add suitable logging instead of print
-# Needs option to see the process of the data and to provide it later on in an interface to understand what happened
-
-from typing import Dict, List, Optional
-import yfinance as yf
-from llm import AIAssistant
 import json
 import re
+import yfinance as yf
+from typing import Dict, List, Optional
+from llm import AIAssistant
+
+# To-Do: Build a more advanced logging and debugging options to check intermediate results
 
 class PortfolioAIAssistant(AIAssistant):
-    """AI-powered portfolio analysis assistant with security evaluation capabilities"""
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.securities_data = {}
 
     def get_quantitative_data(self, identifier: str) -> Dict:
-        """Retrieve quantitative financial data from Yahoo Finance"""
         try:
-            # ticker = self._resolve_ticker(identifier) #TODO: Implement the use of this
-            ticker = identifier # As long as we save the ticker
 
-            stock = yf.Ticker(ticker)
-
-            # TODO: Add more comprehensive data points
+            stock = yf.Ticker(identifier)
             return {
                 "current_price": stock.info.get("currentPrice"),
                 "pe_ratio": stock.info.get("trailingPE"),
                 "market_cap": stock.info.get("marketCap"),
                 "volume": stock.info.get("volume"),
-                # TODO: Add historical data, technical indicators, etc.
             }
         except Exception as e:
-            print(f"Error fetching quantitative data: {str(e)}")
+            print(f"[Error] Quantitative data: {e}")
             return {}
 
-
     def get_qualitative_data(self, identifier: str) -> List[str]:
-        """Collect qualitative information from multiple sources"""
-
-        llm_analysis = self._get_llm_analysis(identifier)
-
-        news_items = self._get_scraped_news(identifier)
-
-        results = f"""
-        Available company informations from LLM:
-        {llm_analysis}
-
-        News informations:
-        {news_items}
-        """
-
-        return results
-
-    def _get_llm_analysis(self, identifier: str) -> List[str]:
-        """Ask the LLM for informtaions about the company"""
-        prompt = f"""
-        Analyze the company with identifier {identifier} considering:
-        1. Core business model and market position
-        2. Notable recent activities (last 12 months)
-        3. Potential risks and opportunities
-
-        Include your knowledge cutoff date.
-        """
-
         try:
-            response = self.generate_response(prompt)
-            return response
+            llm_info = self._get_llm_analysis(identifier)
+            news_info = self._get_scraped_news(identifier)
+            return f"LLM: {llm_info}\n\nNews: {news_info}"
         except Exception as e:
-            print(f"LLM analysis failed: {str(e)}")
+            print(f"[Error] Qualitative data: {e}")
             return []
 
-    def _get_scraped_news(self, identifier: str) -> List[str]:
-        """Scrape aktuelle Nachrichtenartikel"""
-        try:
-            return "No news implemented yet" #TODO: Implement the scraper
+    def _get_llm_analysis(self, identifier: str) -> str:
+        prompt = f"""Analyze {identifier} (business model, recent events, risks/opportunities)."""
+        return self.generate_response(prompt)
 
-        except Exception as e:
-            print(f"News scraping failed: {str(e)}")
-            return []
+    def _get_scraped_news(self, identifier: str) -> str:
+        return "News scraping not implemented yet"
 
-    def assess_security(self,
-                  security_data: Dict,
-                  portfolio_attributes: Dict) -> Dict:
-        """
-        Evaluate security using LLM with comprehensive data analysis.
-        Returns a dictionary with buy/sell/hold percentages and rationale.
-
-        :param security_data: Dictionary containing quantitative and qualitative data
-        :param portfolio_attributes: Dictionary containing portfolio-specific attributes
-        :return: Dictionary with keys "urgency_to_act", "buy", "sell", "hold" (summing to 100%) and "rationale"
-        """
-
-        # Construct analysis prompt
+    def assess_security(self, security_data: Dict, portfolio_attributes: Dict) -> Dict:
         prompt = f"""
-        Analyze the following investment position and provide recommendations:
+        Analyze this investment:
 
-        **Company Fundamentals:**
+        Quantitative data:
         {json.dumps(security_data.get('quantitative', {}), indent=2)}
 
-        **Market News:**
-        {json.dumps(security_data.get('qualitative', []), indent=2)}
+        Qualitative data:
+        {security_data.get('qualitative', '')}
 
-        **Portfolio Context:**
+        Portfolio context:
         {json.dumps(portfolio_attributes, indent=2)}
 
-        Provide your recommendations in the following JSON format:
+        Provide JSON with:
         {{
-            "urgency_to_act": <percentage>,
-            "buy": <percentage>,
-            "sell": <percentage>,
-            "hold": <percentage>,
-            "rationale": "<detailed explanation>"
+          "urgency_to_act": <percent>,
+          "buy": <percent>,
+          "sell": <percent>,
+          "hold": <percent>,
+          "rationale": "<text>"
         }}
-        Ensure that the percentages for buy, sell and hold sum to 100%.
+        Ensure buy + sell + hold == 100
         """
-
         try:
-            print("Generating LLM response for security assessment...")
-            response = self.generate_response(prompt)
-            print(f"LLM raw response: {response}")
-
-            # Parse the LLM response
-            try:
-                # Extract json from response via regex
-                json_string = re.search(r"```json\n(.*?)\n```", response, re.DOTALL).group(1)
-
-                print(f"LLM extracted JSON response: {json_string}")
-
-                # Attempt to parse the response as JSON
-                recommendation = json.loads(json_string)
-
-                # Validate the response structure
-                if not all(key in recommendation for key in ["buy", "sell", "hold", "rationale", "urgency_to_act"]):
-                    raise ValueError("Missing required keys in LLM response")
-
-                # Validate that percentages sum to 100%
-                total = recommendation["buy"] + recommendation["sell"] + recommendation["hold"]
-                if not abs(total - 100.0) < 0.01:  # Allow for floating-point inaccuracies
-                    #TODO: Implement redo mechanism
-                    raise ValueError(f"Percentages do not sum to 100% (sum: {total})")
-
-                print("Successfully parsed and validated LLM response")
-                return recommendation
-
-            except json.JSONDecodeError as e:
-                # Fallback: If the response is not valid JSON, extract percentages and rationale
-                print("LLM response is not valid JSON. Attempting to extract data...")
-                print(f"Assessment failed: {str(e)}")
-                return {
-                    "urgency_to_act" : 0.0,
-                    "buy": 0.0,
-                    "sell": 0.0,
-                    "hold": 0.0,
-                    "rationale": f"Error: {str(e)}"
-                }
-
+            raw = self.generate_response(prompt)
+            match = re.search(r"```json\n(.*?)\n```", raw, re.DOTALL)
+            if match:
+                parsed = json.loads(match.group(1))
+                total = parsed["buy"] + parsed["sell"] + parsed["hold"]
+                if abs(total - 100) > 1:
+                    raise ValueError("Percentages don't sum to 100")
+                return parsed
         except Exception as e:
-            print(f"Assessment failed: {str(e)}")
-            return {
-                "urgency_to_act" : 0.0,
-                "buy": 0.0,
-                "sell": 0.0,
-                "hold": 0.0,
-                "rationale": f"Error: {str(e)}"
-            }
+            print(f"[Error] Security assessment: {e}")
+        return {
+            "urgency_to_act": 0,
+            "buy": 0,
+            "sell": 0,
+            "hold": 0,
+            "rationale": "Assessment failed or invalid format"
+        }
 
-    def _resolve_ticker(self, identifier: str, id_type: str = "WKN") -> str:
-        """Convert WKN/ISIN to Yahoo Finance ticker (placeholder implementation)"""
-        # TODO: Implement proper financial identifier resolution
-        # This should handle different identifier types and market data sources
+    def evaluate_portfolio(self, portfolio: Dict) -> Dict:
+        assets = portfolio.get("assets", {})
+        for ticker, asset in assets.items():
+            print(f"Evaluating {ticker}...")
+            quant = self.get_quantitative_data(ticker)
+            qual = self.get_qualitative_data(ticker)
 
-        # Idea: Using an API or Scrape certain pages or always use Ticker in the first place
-
-        return "AAPL"  # Dummy return for testing
-
-    def evaluate_portfolio(self,
-                         portfolio: Dict[str, Dict],
-                         llm_configs: Optional[List[Dict]] = None) -> Dict:
-        """
-        Analyze entire portfolio of securities
-        Returns aggregated assessments for all positions
-        """
-        results = {}
-
-        portfolio_assets = portfolio["assets"]
-
-        for security_id, attributes in portfolio_assets.items():
-            quant_data = self.get_quantitative_data(security_id)
-            qual_data = self.get_qualitative_data(security_id)
-
-            # Evalutation results should not be passed
-            key_to_exclude = 'evaluation_results'
-            attributes = {key: value for key, value in attributes.items() if key != key_to_exclude}
+            # Remove old evaluation_results if present
+            asset.pop("evaluation_results", None)
 
             assessment = self.assess_security(
-                security_data={"quantitative": quant_data, "qualitative": qual_data},
-                portfolio_attributes=attributes
+                security_data={"quantitative": quant, "qualitative": qual},
+                portfolio_attributes=asset
             )
 
-            results[security_id] = assessment
+            # Store evaluation in asset
+            asset["evaluation_results"] = {
+                "urgency": assessment["urgency_to_act"],
+                "buy": assessment["buy"],
+                "sell": assessment["sell"],
+                "hold": assessment["hold"],
+                "potential_upside": quant.get("pe_ratio", 0), # To-Do: Should be also evaluated from LLM
+                "potential_downside": 0,  # Dummy or computed value # To-Do: Should be also evaluated from LLM
+                "explanation_evaluation": assessment["rationale"]
+            }
 
-        # TODO: Add portfolio-level analysis and risk assessment
-        return results
+        # Run portfolio-level evaluation
+        portfolio["portfolio_evaluation_results"] = self.evaluate_portfolio_summary(portfolio)
+
+        return portfolio
+
+    def evaluate_portfolio_summary(self, portfolio: Dict) -> Dict:
+        try:
+            # Create LLM summary of the full portfolio
+            summary_prompt = f"""
+            Analyze this portfolio based on the following assets and their evaluations:
+
+            {json.dumps(portfolio["assets"], indent=2)}
+
+            Provide a summary JSON with:
+            {{
+              "market_summary": "<text>",
+              "current_opportunities": "<text>",
+              "current_risks": "<text>",
+              "other": "<text>",
+              "explanation_evaluation": "<longer explanation>"
+            }}
+            """
+            raw_summary = self.generate_response(summary_prompt)
+            match = re.search(r"```json\n(.*?)\n```", raw_summary, re.DOTALL)
+            if match:
+                return json.loads(match.group(1))
+        except Exception as e:
+            print(f"[Error] Portfolio summary: {e}")
+        return {
+            "market_summary": "N/A",
+            "current_opportunities": "N/A",
+            "current_risks": "N/A",
+            "other": "N/A",
+            "explanation_evaluation": "Portfolio summary failed."
+        }
 
 
-    def evaluate_with_multiple_llms(self,
-                                  portfolio: Dict[str, Dict],
-                                  llm_configs: List[Dict]) -> Dict:
-        """
-        Compare assessments from different LLM configurations
-        Returns analysis with variance between models
-        """
-        aggregated_results = {}
+### Entry point
 
-        for config in llm_configs:
-            assistant = PortfolioAIAssistant(**config)
-            results = assistant.evaluate_portfolio(portfolio)
-            for security_id, assessment in results.items():
-                if security_id not in aggregated_results:
-                    aggregated_results[security_id] = []
-                aggregated_results[security_id].append(assessment)
-
-        # TODO: Calculate variance and confidence intervals
-        # TODO: Implement consensus recommendation logic
-        return aggregated_results
-
-    # Additional utility methods (stubs)
-    def _calculate_risk_metrics(self, security_data: Dict) -> Dict:
-        """Calculate risk metrics (VaR, volatility, etc.)"""
-        # TODO: Implement risk calculation logic
-        return {}
-
-    def _get_technical_indicators(self, historical_data: Dict) -> Dict:
-        """Calculate technical indicators from price history"""
-        # TODO: Implement TA calculation (RSI, MACD, etc.)
-        return {}
-
-
+# This function is just used for testing without rest of application
 def main():
-    """Simple test of PortfolioAIAssistant with tech stocks"""
+    with open("./test_data/sample_new_portfolio_structure.json", 'r') as f:
+        portfolio = json.load(f)
 
-    # Test portfolio with dummy position data
-    with open("./test_data/sample_new_portfolio_structure.json", 'r') as file:
-        test_portfolio = json.load(file)
-
-
-    # Initialize assistant with test configuration
     assistant = PortfolioAIAssistant(
         provider="ollama",
         model="deepseek-r1:14b"
     )
 
+    result = assistant.evaluate_portfolio(portfolio)
 
-    # Run portfolio evaluation
-    results = assistant.evaluate_portfolio(test_portfolio)
+    print(json.dumps(result, indent=2))
 
-    # Print formatted results
-    print("\nPortfolio Evaluation Report:")
-    for ticker, assessment in results.items():
-        print(f"\n{ticker} Analysis:")
-        print(f" Buy recommendation: {assessment.get('buy', 0):.1f}%")
-        print(f" Sell recommendation: {assessment.get('sell', 0):.1f}%")
-        print(f" Hold recommendation: {assessment.get('hold', 0):.1f}%")
-        print(f" Rationale: {assessment.get('rationale', '')[:200]}...")  # Truncate long text
 
 if __name__ == "__main__":
     main()
