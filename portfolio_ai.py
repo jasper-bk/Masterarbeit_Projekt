@@ -14,7 +14,6 @@ class PortfolioAIAssistant(AIAssistant):
 
     def get_quantitative_data(self, identifier: str) -> Dict:
         try:
-
             stock = yf.Ticker(identifier)
             return {
                 "current_price": stock.info.get("currentPrice"),
@@ -30,7 +29,9 @@ class PortfolioAIAssistant(AIAssistant):
         try:
             llm_info = self._get_llm_analysis(identifier)
             news_info = self._get_scraped_news(identifier)
+
             return f"LLM: {llm_info}\n\nNews: {news_info}"
+
         except Exception as e:
             print(f"[Error] Qualitative data: {e}")
             return []
@@ -57,10 +58,10 @@ class PortfolioAIAssistant(AIAssistant):
 
         Provide JSON with:
         {{
-          "urgency_to_act": <percent>,
-          "buy": <percent>,
-          "sell": <percent>,
-          "hold": <percent>,
+          "urgency_to_act": <int (percent: 0 - 100)>,
+          "buy": <int (percent: 0 - 100)>,
+          "sell": <int (percent: 0 - 100)>,
+          "hold": <int (percent: 0 - 100)>,
           "rationale": "<text>"
         }}
         Ensure buy + sell + hold == 100
@@ -68,26 +69,41 @@ class PortfolioAIAssistant(AIAssistant):
         try:
             raw = self.generate_response(prompt)
             match = re.search(r"```json\n(.*?)\n```", raw, re.DOTALL)
+
             if match:
                 parsed = json.loads(match.group(1))
-                total = parsed["buy"] + parsed["sell"] + parsed["hold"]
+
+                # maybe the fields also needs to be stripped to int (in rare cases of "%" signs)
+                total = int(parsed["buy"]) + int(parsed["sell"]) + int(parsed["hold"])
+
                 if abs(total - 100) > 1:
-                    raise ValueError("Percentages don't sum to 100")
+                    raise ValueError(f"Percentages don't sum to 100. Its {total}")
+
                 return parsed
+
+            else:
+                raise ValueError(f"No JSON found in response. Response: {raw}")
+
         except Exception as e:
             print(f"[Error] Security assessment: {e}")
-        return {
-            "urgency_to_act": 0,
-            "buy": 0,
-            "sell": 0,
-            "hold": 0,
-            "rationale": "Assessment failed or invalid format"
-        }
 
-    def evaluate_portfolio(self, portfolio: Dict) -> Dict:
+            return {
+                "urgency_to_act": 0,
+                "buy": 0,
+                "sell": 0,
+                "hold": 0,
+                "rationale": f"Assessment failed or invalid format: {e}"
+            }
+
+    def evaluate_portfolio(self, portfolio: Dict, specific_assets = None) -> Dict:
         assets = portfolio.get("assets", {})
+
+        if specific_assets:
+            assets = {key: assets[key] for key in specific_assets if key in assets}
+
         for ticker, asset in assets.items():
-            print(f"Evaluating {ticker}...")
+            print(f"Evaluating {ticker} ...")
+
             quant = self.get_quantitative_data(ticker)
             qual = self.get_qualitative_data(ticker)
 
@@ -98,6 +114,8 @@ class PortfolioAIAssistant(AIAssistant):
                 security_data={"quantitative": quant, "qualitative": qual},
                 portfolio_attributes=asset
             )
+
+            # To-Do: print time it took to have a response
 
             # Store evaluation in asset
             asset["evaluation_results"] = {
@@ -116,6 +134,9 @@ class PortfolioAIAssistant(AIAssistant):
         return portfolio
 
     def evaluate_portfolio_summary(self, portfolio: Dict) -> Dict:
+
+        print(f"Evaluating portfolio ...")
+
         try:
             # Create LLM summary of the full portfolio
             summary_prompt = f"""
@@ -132,19 +153,28 @@ class PortfolioAIAssistant(AIAssistant):
               "explanation_evaluation": "<longer explanation>"
             }}
             """
+
             raw_summary = self.generate_response(summary_prompt)
+
+            # To-Do: print time it took to have a response
+
             match = re.search(r"```json\n(.*?)\n```", raw_summary, re.DOTALL)
+
             if match:
                 return json.loads(match.group(1))
+            else:
+                raise ValueError(f"No JSON found in response. Response: {raw}")
+
         except Exception as e:
+
             print(f"[Error] Portfolio summary: {e}")
-        return {
-            "market_summary": "N/A",
-            "current_opportunities": "N/A",
-            "current_risks": "N/A",
-            "other": "N/A",
-            "explanation_evaluation": "Portfolio summary failed."
-        }
+            return {
+                "market_summary": "N/A",
+                "current_opportunities": "N/A",
+                "current_risks": "N/A",
+                "other": "N/A",
+                "explanation_evaluation": f"Portfolio summary failed: {e}"
+            }
 
 
 ### Entry point
@@ -159,7 +189,7 @@ def main():
         model="deepseek-r1:14b"
     )
 
-    result = assistant.evaluate_portfolio(portfolio)
+    result = assistant.evaluate_portfolio(portfolio, specific_assets=["BAS.DE"])
 
     print(json.dumps(result, indent=2))
 

@@ -13,6 +13,12 @@ CORS(app)  # Enable CORS if needed
 with open("./test_data/sample_new_portfolio_structure.json", 'r') as file:
     portfolio = json.load(file)
 
+# replace with faster LLM # Trying Nexus from Company account first?
+assistant = PortfolioAIAssistant(
+    provider="ollama",
+    model="deepseek-r1:14b"
+)
+
 ###########
 # Webpage #
 ###########
@@ -69,14 +75,7 @@ def get_stocks():
 
 @app.route('/api/evaluate-full-portfolio')
 def evaluate_full_portfolio():
-
-    assistant = PortfolioAIAssistant(
-        provider="ollama",
-        model="deepseek-r1:14b"
-    )
-
-    # To-Do: make portfolio variable public available
-    # Maybe via the PortfolioAIAssistant object?
+    global portfolio #should be replaced later with better practice
 
     try:
         portfolio = assistant.evaluate_portfolio(portfolio)
@@ -88,16 +87,11 @@ def evaluate_full_portfolio():
 
 @app.route('/api/evaluate-single-asset/<path:identifier>')
 def evaluate_single_asset(identifier):
-
-    assistant = PortfolioAIAssistant(
-        provider="ollama",
-        model="deepseek-r1:14b"
-    )
+    global portfolio #should be replaced later with better practice
 
     try:
-
-        #To-Do: Needs to be implemented
-        response = {"response" : "Not yet implemented!"}
+        portfolio = assistant.evaluate_portfolio(portfolio, specific_assets=[identifier])
+        response = {"response" : f"{identifier} has been sucessfully evaluated."}
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -115,7 +109,7 @@ def analyze_portfolio():
 
     assistant = AIAssistant(
         provider=data.get('provider', 'ollama'),
-        model=data.get('model', 'deepseek-r1:14b'),
+        model=data.get('model', 'deepseek-r1:1.5b'),
         langchain=data.get('langchain', False)
     )
 
