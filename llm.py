@@ -9,6 +9,7 @@ import requests
 from retry import retry
 import argparse
 import json
+import dotenv
 
 class AIAssistant():
     """AI base assistant with multi-provider support"""
@@ -46,6 +47,7 @@ class AIAssistant():
                 model=self.model,
                 openai_api_key=self.api_key
             )
+        # To-Do: Add Nexus or call it custom
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
 
@@ -74,7 +76,8 @@ class AIAssistant():
         """Get base URL for API endpoint"""
         urls = {
             "ollama": "http://127.0.0.1:11434",
-            "openai": "https://api.openai.com/v1"
+            "openai": "https://api.openai.com/v1",
+            "nexus" : "https://genai-nexus.api.corpinter.net"
         }
         return urls.get(self.provider)
 
@@ -82,12 +85,17 @@ class AIAssistant():
         """Direct API call without LangChain middleware"""
         endpoint = {
             "ollama": "/api/generate",
-            "openai": "/chat/completions"
+            "openai": "/chat/completions",
+            "nexus" : "/apikey/openai/deployments/gpt-4o/chat/completions?api-version=2024-06-01"
         }[self.provider]
 
         headers = {"Content-Type": "application/json"}
+
         if self.provider == "openai":
             headers["Authorization"] = f"Bearer {self.api_key}"
+
+        if self.provider == "nexus":
+            headers["api-key"] = self.api_key
 
         payload = self._build_payload(prompt)
 
@@ -106,7 +114,7 @@ class AIAssistant():
                 "prompt": prompt,
                 "stream": False
             }
-        elif self.provider == "openai":
+        elif self.provider in ["openai", "nexus"]:
             return {
                 "model": self.model,
                 "messages": [{"role": "user", "content": prompt}]
@@ -119,7 +127,7 @@ class AIAssistant():
 
         if self.provider == "ollama":
             return response.json().get("response", "")
-        elif self.provider == "openai":
+        elif self.provider in ["openai", "nexus"]:
             return response.json()["choices"][0]["message"]["content"]
 
 def main():
@@ -147,7 +155,7 @@ def main():
     result = assistant.generate_response(args.prompt)
     print(json.dumps(result, indent=2))
 
-def manual_test():
+def manual_ollama_test():
     assistant = AIAssistant(
         provider="ollama",
         model="deepseek-r1:14b"
@@ -156,6 +164,15 @@ def manual_test():
     result = assistant.generate_response("Count to 3")
     print(result)
 
+def manual_nexus_test():
+    dotenv.load_dotenv()
+    assistant = AIAssistant(
+        provider="nexus"
+    )
+
+    result = assistant.generate_response("Count to 3")
+    print(result)
+
 if __name__ == "__main__":
-    manual_test()
+    manual_nexus_test()
     #main()

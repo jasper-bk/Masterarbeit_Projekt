@@ -5,8 +5,11 @@ import re
 import yfinance as yf
 from typing import Dict, List, Optional
 from llm import AIAssistant
+import dotenv
+import time
 
 # To-Do: Build a more advanced logging and debugging options to check intermediate results
+# To-Do/Idea: Save intermediate LLM response and prompts in a dictionary and allow to check it for debugging
 
 class PortfolioAIAssistant(AIAssistant):
     def __init__(self, *args, **kwargs):
@@ -14,7 +17,13 @@ class PortfolioAIAssistant(AIAssistant):
 
     def get_quantitative_data(self, identifier: str) -> Dict:
         try:
+            start_time = time.time()
+
             stock = yf.Ticker(identifier)
+
+            response_time = time.time() - start_time
+            print(f"Getting quantitative data for {identifier} took {response_time} seconds")
+
             return {
                 "current_price": stock.info.get("currentPrice"),
                 "pe_ratio": stock.info.get("trailingPE"),
@@ -38,7 +47,15 @@ class PortfolioAIAssistant(AIAssistant):
 
     def _get_llm_analysis(self, identifier: str) -> str:
         prompt = f"""Analyze {identifier} (business model, recent events, risks/opportunities)."""
-        return self.generate_response(prompt)
+
+        start_time = time.time()
+
+        response = self.generate_response(prompt)
+
+        response_time = time.time() - start_time
+        print(f"Getting LLM asset analysis for {identifier} took {response_time} seconds")
+
+        return response
 
     def _get_scraped_news(self, identifier: str) -> str:
         return "News scraping not implemented yet"
@@ -68,7 +85,7 @@ class PortfolioAIAssistant(AIAssistant):
         """
         try:
             raw = self.generate_response(prompt)
-            match = re.search(r"```json\n(.*?)\n```", raw, re.DOTALL)
+            match = re.search(r"({.*?})", raw, re.DOTALL)
 
             if match:
                 parsed = json.loads(match.group(1))
@@ -110,12 +127,16 @@ class PortfolioAIAssistant(AIAssistant):
             # Remove old evaluation_results if present
             asset.pop("evaluation_results", None)
 
+            start_time = time.time()
+
             assessment = self.assess_security(
                 security_data={"quantitative": quant, "qualitative": qual},
                 portfolio_attributes=asset
             )
 
-            # To-Do: print time it took to have a response
+            response_time = time.time() - start_time
+
+            print(f"The LLM evaluation for {ticker} took {response_time} seconds")
 
             # Store evaluation in asset
             asset["evaluation_results"] = {
@@ -154,16 +175,21 @@ class PortfolioAIAssistant(AIAssistant):
             }}
             """
 
+            start_time = time.time()
+
             raw_summary = self.generate_response(summary_prompt)
 
-            # To-Do: print time it took to have a response
+            response_time = time.time() - start_time
 
-            match = re.search(r"```json\n(.*?)\n```", raw_summary, re.DOTALL)
+            print(f"The LLM evaluation for the portfolio took {response_time} seconds")
+
+            match = re.search(r"({.*?})", raw_summary, re.DOTALL)
 
             if match:
+                # To-Do: Sometimes an error occurs while parsing the JSOn because of special characters. Idea: Tell LLM to only use UTF-8
                 return json.loads(match.group(1))
             else:
-                raise ValueError(f"No JSON found in response. Response: {raw}")
+                raise ValueError(f"No JSON found in response. Response: {raw_summary}")
 
         except Exception as e:
 
@@ -189,7 +215,13 @@ def main():
         model="deepseek-r1:14b"
     )
 
+    #dotenv.load_dotenv()
+    #assistant = PortfolioAIAssistant(
+    #    provider="nexus"
+    #)
+
     result = assistant.evaluate_portfolio(portfolio, specific_assets=["BAS.DE"])
+    #result = assistant.evaluate_portfolio(portfolio)
 
     print(json.dumps(result, indent=2))
 

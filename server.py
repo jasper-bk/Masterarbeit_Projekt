@@ -5,6 +5,7 @@ from flask_cors import CORS
 from llm import AIAssistant
 from portfolio_ai import PortfolioAIAssistant
 import json
+import dotenv
 
 app = Flask(__name__, template_folder='webpage/templates', static_folder='webpage/static')
 CORS(app)  # Enable CORS if needed
@@ -13,10 +14,15 @@ CORS(app)  # Enable CORS if needed
 with open("./test_data/sample_new_portfolio_structure.json", 'r') as file:
     portfolio = json.load(file)
 
-# replace with faster LLM # Trying Nexus from Company account first?
+# replace with faster LLM
+#assistant = PortfolioAIAssistant(
+#    provider="ollama",
+#    model="deepseek-r1:14b"
+#)
+
+dotenv.load_dotenv()
 assistant = PortfolioAIAssistant(
-    provider="ollama",
-    model="deepseek-r1:14b"
+    provider="nexus"
 )
 
 ###########
@@ -50,11 +56,11 @@ def get_portfolio():
         'overallBuy': sum(item["evaluation_results"]['buy'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
         'overallSell': sum(item["evaluation_results"]['sell'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
         'overallHold': sum(item["evaluation_results"]['hold'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
-        'marketSummary': 'Dummy Market Summary',
-        'currentOpportunities': 'Sample Opportunities',
-        'currentRisks': 'Potential Risks',
-        'other': 'Additional Information',
-        'languageAssessment': 'Language Analysis'
+        'marketSummary': portfolio["portfolio_evaluation_results"]["market_summary"],
+        'currentOpportunities': portfolio["portfolio_evaluation_results"]["current_opportunities"],
+        'currentRisks': portfolio["portfolio_evaluation_results"]["current_risks"],
+        'other': portfolio["portfolio_evaluation_results"]["other"],
+        'languageAssessment': portfolio["portfolio_evaluation_results"]["explanation_evaluation"]
     }
 
     return jsonify(portfolio_informations)
