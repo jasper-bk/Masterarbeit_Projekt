@@ -1,4 +1,25 @@
 class ApiService {
+
+  static async doFullPortfolioEvaluation() {
+    try {
+      const response = await fetch('/api/evaluate-full-portfolio');
+      const data = await response.json();
+
+    } catch (error) {
+      console.error('Error evaluating portfolio', error);
+    }
+  }
+
+  static async doAssetEvaluation(identifier) {
+    try {
+      const response = await fetch('/api/evaluate-single-asset/' + identifier);
+      const data = await response.json();
+
+    } catch (error) {
+      console.error('Error evaluating ' + identifier, error);
+    }
+  }
+
   static async loadPortfolioData() {
     try {
       const response = await fetch('/api/portfolio');
@@ -27,7 +48,7 @@ class ApiService {
 
       portfolio.getStocks().splice(0); // Clear existing stocks
       stocksData.forEach(stockData => {
-        const stock = new Stock(stockData.name);
+        const stock = new Stock(stockData.identifier, stockData.name);
 
         stock.setQuantity(stockData.quantity);
         stock.setBuyInPrice(stockData.purchase_price);

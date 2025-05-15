@@ -97,14 +97,42 @@ $(async function () {
   // Button events
   $('#refreshAllBtn').on('click', async function () {
     await handleRefresh(this, async () => {
-      await ApiService.initialize(); // Optionally fetch fresh data
+
+      // To-Do: Implement a status. Like step 2 from x finished
+      await ApiService.doFullPortfolioEvaluation();
+
+      await ApiService.initialize(); // fetch fresh data
       await renderDashboard();
     });
   });
 
   $('#refreshBtn').on('click', async function () {
     await handleRefresh(this, async () => {
-      // Could target specific tab later
+
+      // Get the active tab and find out which stockObj is mapped to the tab
+      const activeTabButton = document.querySelector('#dashboardTabs .nav-link.active');
+      if (!activeTabButton) {
+        alert("No active tab found.");
+        return;
+      }
+
+      const tabId = activeTabButton.id.replace('tab-', '').replace('-tab', '');
+      const stockName = activeTabButton.textContent.trim().replace('×', '').trim();
+
+      const stockObj = portfolio.getStocks().find(s => s.getName() === stockName);
+      if (!stockObj) {
+        if (stockName == "Portfolio Overview") return;
+
+        alert(`Stock object for "${stockName}" not found.`);
+        return;
+      }
+
+      let identifier = stockObj.getIdentifier();
+
+      // To-Do: Implement a status. Like step 2 from x finished
+      await ApiService.doAssetEvaluation(identifier)
+
+      await ApiService.initialize(); // fetch fresh data
       await renderDashboard();
     });
   });
@@ -265,6 +293,45 @@ class StockTab {
   }
 }
 
+function updateStockTabContent(stockObj) {
+  const tabId = stockObj.getName().replace(/\s+/g, '-').toLowerCase();
+
+  // Update values
+  document.getElementById(`quantity-${tabId}`).textContent = stockObj.getQuantity();
+  document.getElementById(`value-${tabId}`).textContent = `€${stockObj.getQuantity() * stockObj.getBuyInPrice()}`;
+  document.getElementById(`yield-${tabId}`).textContent = stockObj.getCurrentReturn();
+  document.getElementById(`upside-${tabId}`).textContent = "+" + stockObj.getPotentialUpside() + "%";
+  document.getElementById(`downside-${tabId}`).textContent = "- " + stockObj.getPotentialDownside() + "%";
+  document.getElementById(`urgency-${tabId}`).textContent = `Urgency: ${stockObj.getUrgency()}%`;
+  document.getElementById(`assessment-${tabId}`).textContent = stockObj.getLanguageAssessment();
+
+  // Update traffic light
+  ['red', 'yellow', 'green'].forEach(color =>
+    document.getElementById(`light-${color}-${tabId}`).classList.remove('active')
+  );
+  const urgency = stockObj.getUrgency();
+  if (urgency >= 66) document.getElementById(`light-red-${tabId}`).classList.add('active');
+  else if (urgency >= 33) document.getElementById(`light-yellow-${tabId}`).classList.add('active');
+  else document.getElementById(`light-green-${tabId}`).classList.add('active');
+
+  // Update pie chart
+  const chartEl = document.getElementById(`pieChart-${tabId}`);
+  if (chartEl && Chart.getChart(chartEl)) {
+    const chart = Chart.getChart(chartEl);
+    chart.data.datasets[0].data = [stockObj.getSell(), stockObj.getHold(), stockObj.getBuy()];
+    chart.update();
+  }
+}
+
+function refreshOpenStockTabs() {
+  document.querySelectorAll('#dashboardTabs .nav-link[id^="tab-"]').forEach(tabButton => {
+    const stockName = tabButton.textContent.trim().replace('×', '').trim();
+    const stockObj = portfolio.getStocks().find(s => s.getName() === stockName);
+    if (stockObj) {
+      updateStockTabContent(stockObj);
+    }
+  });
+}
 
 // Main dashboard rendering logic
 async function renderDashboard() {
@@ -307,6 +374,9 @@ async function renderDashboard() {
 
   // Refresh urgency list
   renderUrgencyList();
+
+  // Refresh all open stock tabs
+  refreshOpenStockTabs();
 }
 
 // Handle refresh buttons with loading animation

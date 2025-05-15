@@ -1,5 +1,6 @@
 class Stock {
-  constructor(name) {
+  constructor(identifier, name) {
+    this._identifier = identifier;
     this._name = name;
     this._urgency = 0;
     this._hold = 0;
@@ -14,6 +15,7 @@ class Stock {
   }
 
   // Getter
+  getIdentifier() { return this._identifier; }
   getName() { return this._name; }
   getUrgency() { return this._urgency; }
   getHold() { return this._hold; }

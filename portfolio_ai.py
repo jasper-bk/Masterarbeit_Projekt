@@ -207,7 +207,7 @@ class PortfolioAIAssistant(AIAssistant):
 
 # This function is just used for testing without rest of application
 def main():
-    with open("./test_data/sample_new_portfolio_structure.json", 'r') as f:
+    with open("./test_data/sample_portfolio.json", 'r') as f:
         portfolio = json.load(f)
 
     assistant = PortfolioAIAssistant(

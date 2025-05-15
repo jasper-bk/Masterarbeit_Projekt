@@ -11,7 +11,7 @@ app = Flask(__name__, template_folder='webpage/templates', static_folder='webpag
 CORS(app)  # Enable CORS if needed
 
 # Loading test data
-with open("./test_data/sample_new_portfolio_structure.json", 'r') as file:
+with open("./test_data/sample_portfolio_2_default.json", 'r') as file:
     portfolio = json.load(file)
 
 # replace with faster LLM
@@ -68,7 +68,8 @@ def get_portfolio():
 @app.route('/api/stocks')
 def get_stocks():
 
-    stocks_list = list(portfolio["assets"].values())
+    # Moving original key into the dictionary as new attribute
+    stocks_list = [{"identifier": key, **value} for key, value in portfolio["assets"].items()]
 
     # To-Do: Also build a way to handle case that the stock is not yet evaluated
     stocks_list.sort(key=lambda x: x["evaluation_results"]['urgency'], reverse=True)
