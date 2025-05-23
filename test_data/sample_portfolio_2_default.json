@@ -3,6 +3,24 @@
     "investor_goals" : "To be specified",
 
     "assets" : {
+        "MBG.DE": {
+            "name" : "Mercedes Benz",
+            "purchase_price": 50.10,
+            "quantity": 66,
+            "holding_days": 450,
+            "current_yield": 0.45,
+
+            "evaluation_results" : {
+                "urgency": 0,
+                "buy": 33,
+                "sell": 33,
+                "hold": 33,
+
+                "potential_upside": 0,
+                "potential_downside" : 0,
+                "explanation_evaluation" : "Not yet evaluated"
+            }
+        },
         "GOOG": {
             "name" : "Alphabet",
             "purchase_price": 134.50,
