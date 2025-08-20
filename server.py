@@ -10,9 +10,6 @@ import dotenv
 app = Flask(__name__, template_folder='webpage/templates', static_folder='webpage/static')
 CORS(app)  # Enable CORS if needed
 
-# Loading test data
-with open("./test_data/sample_portfolio_2_default.json", 'r') as file:
-    portfolio = json.load(file)
 
 # replace with faster LLM
 #assistant = PortfolioAIAssistant(
@@ -21,9 +18,24 @@ with open("./test_data/sample_portfolio_2_default.json", 'r') as file:
 #)
 
 dotenv.load_dotenv()
+
 assistant = PortfolioAIAssistant(
-    provider="nexus"
+    provider="ollama",
+    model="qwen3:14b",
+    finance_provider="yfinance",  # uses finnhub SDK now
+    ensemble=False,
 )
+
+pf = assistant.new_portfolio("Sample Portfolio", "Long-term growth / balanced risk")
+pf.add_asset("MBG.DE", name="Mercedes-Benz Group")
+pf.add_trade("MBG.DE", quantity=10, price=50.10, date_str="2023-05-01")
+pf.add_trade("MBG.DE", quantity=56, price=52.00, date_str="2023-06-01")
+
+pf.add_asset("GOOG", name="Alphabet")
+pf.add_trade("GOOG", quantity=25, price=134.50, date_str="2023-02-15")
+
+pf.add_asset("BAYN.DE", name="Bayer AG")
+pf.add_trade("BAYN.DE", quantity=300, price=60.51, date_str="2023-02-15")
 
 ###########
 # Webpage #
@@ -46,22 +58,27 @@ def static_files(filename):
 @app.route('/api/portfolio')
 def get_portfolio():
 
-    stocks_list = list(portfolio["assets"].values())
+    portfolio_dict = pf.to_dict()
+
+    stocks_list = list(portfolio_dict["assets"].values())
+
+    default_if_empty_str = "Not evaluated yet. Run evaluation to see results."
 
     # Idea: Just pass the whole portfolio JSON to the frontend and do all calculations, sorting there. JSON could be just reloaded
 
     # To-Do: Build a useful check to handle the case that the stock is not yet evaluated and therefore the key does not exist
     portfolio_informations = {
-        'overallUrgency': sum(item["evaluation_results"]['urgency'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
-        'overallBuy': sum(item["evaluation_results"]['buy'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
-        'overallSell': sum(item["evaluation_results"]['sell'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
-        'overallHold': sum(item["evaluation_results"]['hold'] for item in stocks_list) / len(stocks_list) if stocks_list else 0,
-        'marketSummary': portfolio["portfolio_evaluation_results"]["market_summary"],
-        'currentOpportunities': portfolio["portfolio_evaluation_results"]["current_opportunities"],
-        'currentRisks': portfolio["portfolio_evaluation_results"]["current_risks"],
-        'other': portfolio["portfolio_evaluation_results"]["other"],
-        'languageAssessment': portfolio["portfolio_evaluation_results"]["explanation_evaluation"]
+        'overallUrgency': sum(item["evaluation_results"].get('urgency', 0) for item in stocks_list) / len(stocks_list) if stocks_list else 0,
+        'overallBuy': sum(item["evaluation_results"].get('buy', 0) for item in stocks_list) / len(stocks_list) if stocks_list else 0,
+        'overallSell': sum(item["evaluation_results"].get('sell', 0) for item in stocks_list) / len(stocks_list) if stocks_list else 0,
+        'overallHold': sum(item["evaluation_results"].get('hold', 0) for item in stocks_list) / len(stocks_list) if stocks_list else 0,
+        'marketSummary': portfolio_dict.get("portfolio_evaluation_results", {}).get("market_summary", default_if_empty_str),
+        'currentOpportunities': portfolio_dict.get("portfolio_evaluation_results", {}).get("current_opportunities", default_if_empty_str),
+        'currentRisks': portfolio_dict.get("portfolio_evaluation_results", {}).get("current_risks", default_if_empty_str),
+        'other': portfolio_dict.get("portfolio_evaluation_results", {}).get("other", default_if_empty_str),
+        'languageAssessment': portfolio_dict.get("portfolio_evaluation_results", {}).get("explanation_evaluation", default_if_empty_str)
     }
+
 
     return jsonify(portfolio_informations)
 
@@ -69,10 +86,10 @@ def get_portfolio():
 def get_stocks():
 
     # Moving original key into the dictionary as new attribute
-    stocks_list = [{"identifier": key, **value} for key, value in portfolio["assets"].items()]
+    stocks_list = [{"identifier": key, **value} for key, value in pf.to_dict()["assets"].items()]
 
     # To-Do: Also build a way to handle case that the stock is not yet evaluated
-    stocks_list.sort(key=lambda x: x["evaluation_results"]['urgency'], reverse=True)
+    stocks_list.sort(key=lambda x: x["evaluation_results"].get('urgency',0), reverse=True)
 
     return jsonify(stocks_list)
 
@@ -85,7 +102,7 @@ def evaluate_full_portfolio():
     global portfolio #should be replaced later with better practice
 
     try:
-        portfolio = assistant.evaluate_portfolio(portfolio)
+        assistant.evaluate_portfolio(pf)
         response = {"response" : "Portfolio has been sucessfully evaluated."}
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -97,7 +114,7 @@ def evaluate_single_asset(identifier):
     global portfolio #should be replaced later with better practice
 
     try:
-        portfolio = assistant.evaluate_portfolio(portfolio, specific_assets=[identifier])
+        assistant.evaluate_portfolio(pf, specific_assets=[identifier])
         response = {"response" : f"{identifier} has been sucessfully evaluated."}
 
     except Exception as e:
