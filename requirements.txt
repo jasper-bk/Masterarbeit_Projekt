@@ -6,6 +6,9 @@ langchain_openai
 langchain_anthropic
 langchain_google_genai
 finnhub-python
+
+faiss-cpu # for RAG
+
 dotenv
 matplotlib
 seaborn

@@ -2,8 +2,13 @@
 
 from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
+
 from llm import AIAssistant
+
 from portfolio_ai import PortfolioAIAssistant
+from portfolio_chat import PortfolioChat
+
+import re
 import json
 import dotenv
 
@@ -36,6 +41,8 @@ pf.add_trade("GOOG", quantity=25, price=134.50, date_str="2023-02-15")
 
 pf.add_asset("BAYN.DE", name="Bayer AG")
 pf.add_trade("BAYN.DE", quantity=300, price=60.51, date_str="2023-02-15")
+
+chat = PortfolioChat(assistant, pf, use_rag=True)
 
 ###########
 # Webpage #
@@ -152,54 +159,6 @@ def analyze_portfolio():
 # ADDED: Chat API endpoint
 # =========================
 
-def _build_chat_prompt(user_message: str, portfolio_ctx: dict) -> str:
-
-    # The whole chat prompt thing should be moved to the assistant class later and using LangChain
-    # Sould also not rely on portfolio_ctx from frontend. Just get data from portfolio object directly
-
-    # Shallow copy
-    ctx = portfolio_ctx or {}
-
-    # Light trimming for safety
-    try:
-      trimmed = {
-          "summary": ctx.get("summary", {}),
-          "stocks": []
-      }
-      stocks = ctx.get("stocks", []) or []
-      # Keep up to 30 stocks; for each, keep only relevant keys
-      for stock in stocks[:30]:
-          trimmed["stocks"].append({
-              "identifier": stock.get("identifier"),
-              "name": stock.get("name"),
-              "quantity": stock.get("quantity"),
-              "buyInPrice": stock.get("buyInPrice"),
-              "currentReturn": stock.get("currentReturn"),
-              "urgency": stock.get("urgency"),
-              "buy": stock.get("buy"),
-              "sell": stock.get("sell"),
-              "hold": stock.get("hold"),
-              "potentialUpside": stock.get("potentialUpside"),
-              "potentialDownside": stock.get("potentialDownside"),
-              # keep assessment but clip to 800 chars to avoid huge prompts
-              "languageAssessment": (stock.get("languageAssessment") or "")[:800]
-          })
-    except Exception:
-      trimmed = ctx
-
-    prompt = (
-        "You are a helpful investment assistant. "
-        "Answer briefly, clearly, and cite concrete figures from the provided context when relevant. "
-        "Avoid hallucinating tickers or prices not present in the context. "
-        "If information is missing, say so and propose the next best step.\n\n"
-        f"USER MESSAGE:\n{user_message}\n\n"
-        "PORTFOLIO CONTEXT (JSON):\n"
-        f"{json.dumps(trimmed, ensure_ascii=False, indent=2)}\n\n"
-        "Now provide your answer to the user:"
-    )
-    return prompt
-
-
 @app.route('/api/chat', methods=['POST'])
 def chat_with_assistant():
     """
@@ -209,23 +168,20 @@ def chat_with_assistant():
     try:
         payload = request.get_json(force=True, silent=True) or {}
         user_message = (payload.get("message") or "").strip()
-        context = payload.get("context") or {}
-        portfolio_ctx = context.get("portfolio") or {}
+        # To-Do: give context about what the user currently sees
 
         if not user_message:
             return jsonify({"error": "Missing 'message'"}), 400
 
-        # Build the prompt using the provided frontend context
-        prompt = _build_chat_prompt(user_message, portfolio_ctx)
+        session_id = "default"
 
-        # Use a lightweight generic assistant for chat
-        chat_assistant = AIAssistant(
-            provider="ollama",
-            model="qwen3:14b",
-            langchain=False
-        )
+        reply = chat.ask(session_id, user_message)
 
-        reply = chat_assistant.generate_response(prompt)
+        flag_remove_think = True
+
+        if flag_remove_think:
+            reply = re.sub(r'<think>.*?</think>', '', reply, flags=re.DOTALL).strip()
+
         # Ensure string
         if not isinstance(reply, str):
             reply = str(reply)

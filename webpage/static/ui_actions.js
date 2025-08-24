@@ -1,42 +1,6 @@
 // Simulated local storage for JSONs (can later be replaced by real backend)
 let jsonFiles = [];
 
-// ===== Added: helper to serialize current portfolio context for LLM =====
-function buildPortfolioContext() {
-  try {
-    return {
-      summary: {
-        overallUrgency: portfolio.getOverallUrgency(),
-        overallBuy: portfolio.getOverallBuy(),
-        overallSell: portfolio.getOverallSell(),
-        overallHold: portfolio.getOverallHold(),
-        marketSummary: portfolio.getMarketSummary(),
-        currentOpportunities: portfolio.getCurrentOpportunities(),
-        currentRisks: portfolio.getCurrentRisks(),
-        other: portfolio.getOther(),
-        languageAssessment: portfolio.getLanguageAssessment()
-      },
-      stocks: portfolio.getStocks().map(s => ({
-        identifier: s.getIdentifier(),
-        name: s.getName(),
-        quantity: s.getQuantity(),
-        buyInPrice: s.getBuyInPrice(),
-        currentReturn: s.getCurrentReturn(),
-        urgency: s.getUrgency(),
-        buy: s.getBuy(),
-        sell: s.getSell(),
-        hold: s.getHold(),
-        potentialUpside: s.getPotentialUpside(),
-        potentialDownside: s.getPotentialDownside(),
-        languageAssessment: s.getLanguageAssessment()
-      }))
-    };
-  } catch (e) {
-    console.warn('Failed to build portfolio context', e);
-    return { summary: {}, stocks: [] };
-  }
-}
-
 // ===== Added: chat DOM helpers =====
 function appendChatMessage(role, text, messagesEl) {
   const div = document.createElement('div');
@@ -52,7 +16,7 @@ function appendChatSpinner(messagesEl) {
   wrap.className = 'chat-spinner';
   wrap.innerHTML = `
     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-    <span>Assistant is typing…</span>
+    <span>Assistant is thinking ...</span>
   `;
   messagesEl.appendChild(wrap);
   messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -134,10 +98,7 @@ function initializeChatWidget() {
 
     try {
       const payload = {
-        message,
-        context: {
-          portfolio: buildPortfolioContext()
-        }
+        message
       };
 
       const res = await fetch('/api/chat', {
@@ -566,3 +527,9 @@ function renderUrgencyList() {
     container.appendChild(li);
   });
 }
+
+$('#chat-window').resizable({
+  handles: 'nw',
+  minWidth: 260,
+  minHeight: 200
+});
