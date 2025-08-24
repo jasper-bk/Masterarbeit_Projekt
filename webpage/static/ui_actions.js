@@ -1,6 +1,68 @@
 // Simulated local storage for JSONs (can later be replaced by real backend)
 let jsonFiles = [];
 
+// ===== Added: helper to serialize current portfolio context for LLM =====
+function buildPortfolioContext() {
+  try {
+    return {
+      summary: {
+        overallUrgency: portfolio.getOverallUrgency(),
+        overallBuy: portfolio.getOverallBuy(),
+        overallSell: portfolio.getOverallSell(),
+        overallHold: portfolio.getOverallHold(),
+        marketSummary: portfolio.getMarketSummary(),
+        currentOpportunities: portfolio.getCurrentOpportunities(),
+        currentRisks: portfolio.getCurrentRisks(),
+        other: portfolio.getOther(),
+        languageAssessment: portfolio.getLanguageAssessment()
+      },
+      stocks: portfolio.getStocks().map(s => ({
+        identifier: s.getIdentifier(),
+        name: s.getName(),
+        quantity: s.getQuantity(),
+        buyInPrice: s.getBuyInPrice(),
+        currentReturn: s.getCurrentReturn(),
+        urgency: s.getUrgency(),
+        buy: s.getBuy(),
+        sell: s.getSell(),
+        hold: s.getHold(),
+        potentialUpside: s.getPotentialUpside(),
+        potentialDownside: s.getPotentialDownside(),
+        languageAssessment: s.getLanguageAssessment()
+      }))
+    };
+  } catch (e) {
+    console.warn('Failed to build portfolio context', e);
+    return { summary: {}, stocks: [] };
+  }
+}
+
+// ===== Added: chat DOM helpers =====
+function appendChatMessage(role, text, messagesEl) {
+  const div = document.createElement('div');
+  div.className = `chat-message ${role === 'user' ? 'user' : role === 'assistant' ? 'assistant' : 'error'}`;
+  div.textContent = text;
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return div;
+}
+
+function appendChatSpinner(messagesEl) {
+  const wrap = document.createElement('div');
+  wrap.className = 'chat-spinner';
+  wrap.innerHTML = `
+    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+    <span>Assistant is typing…</span>
+  `;
+  messagesEl.appendChild(wrap);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return wrap;
+}
+
+function removeEl(el) {
+  if (el && el.parentNode) el.parentNode.removeChild(el);
+}
+
 // Initialize settings modal and button events
 function initializeSettingsModal() {
   $('#settingsButton').on('click', function () {
@@ -58,18 +120,78 @@ function initializeChatWidget() {
     chatWindow.classList.add('d-none');
   });
 
+  // ===== Added: core send logic as a reusable function =====
+  async function sendToAssistant(message) {
+    // Build user bubble (existing UX)
+    const userBubble = appendChatMessage('user', message, chatMessages);
+
+    // Loader
+    const spinner = appendChatSpinner(chatMessages);
+
+    // Disable input during request
+    chatSubmit.disabled = true;
+    chatInput.disabled = true;
+
+    try {
+      const payload = {
+        message,
+        context: {
+          portfolio: buildPortfolioContext()
+        }
+      };
+
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      let assistantText = '';
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`HTTP ${res.status} ${res.statusText}${errText ? ` - ${errText}` : ''}`);
+      }
+
+      // Expected response shape from Flask:
+      // { reply: string }  (keep it simple; you can adapt server later)
+      const data = await res.json();
+      assistantText = (data && typeof data.reply === 'string') ? data.reply : '(No reply received)';
+
+      appendChatMessage('assistant', assistantText, chatMessages);
+    } catch (e) {
+      console.error('Chat error:', e);
+      appendChatMessage('error', 'Sorry, there was a problem contacting the assistant.', chatMessages);
+    } finally {
+      removeEl(spinner);
+      chatSubmit.disabled = false;
+      chatInput.disabled = false;
+      chatInput.focus();
+    }
+  }
+
+  // Original click handler extended to call backend
   chatSubmit.addEventListener('click', () => {
     const message = chatInput.value.trim();
     if (message !== '') {
       console.log('Chat message:', message);
 
-      const msgDiv = document.createElement('div');
-      msgDiv.textContent = message;
-      msgDiv.className = 'mb-2 text-end text-primary';
-      chatMessages.appendChild(msgDiv);
+      // Existing UI echo (kept, but we avoid double message by not duplicating here)
+      // (We now let sendToAssistant create the user bubble)
       chatMessages.scrollTop = chatMessages.scrollHeight;
-
       chatInput.value = '';
+
+      // ===== Added: send to backend with portfolio context =====
+      sendToAssistant(message);
+    }
+  });
+
+  // ===== Added: send on Enter key press =====
+  chatInput.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' && !ev.shiftKey) {
+      ev.preventDefault();
+      chatSubmit.click();
     }
   });
 

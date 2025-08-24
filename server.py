@@ -22,7 +22,7 @@ dotenv.load_dotenv()
 assistant = PortfolioAIAssistant(
     provider="ollama",
     model="qwen3:14b",
-    finance_provider="yfinance",  # uses finnhub SDK now
+    finance_provider="yfinance",
     ensemble=False,
 )
 
@@ -146,6 +146,95 @@ def analyze_portfolio():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# =========================
+# ADDED: Chat API endpoint
+# =========================
+
+def _build_chat_prompt(user_message: str, portfolio_ctx: dict) -> str:
+
+    # The whole chat prompt thing should be moved to the assistant class later and using LangChain
+    # Sould also not rely on portfolio_ctx from frontend. Just get data from portfolio object directly
+
+    # Shallow copy
+    ctx = portfolio_ctx or {}
+
+    # Light trimming for safety
+    try:
+      trimmed = {
+          "summary": ctx.get("summary", {}),
+          "stocks": []
+      }
+      stocks = ctx.get("stocks", []) or []
+      # Keep up to 30 stocks; for each, keep only relevant keys
+      for stock in stocks[:30]:
+          trimmed["stocks"].append({
+              "identifier": stock.get("identifier"),
+              "name": stock.get("name"),
+              "quantity": stock.get("quantity"),
+              "buyInPrice": stock.get("buyInPrice"),
+              "currentReturn": stock.get("currentReturn"),
+              "urgency": stock.get("urgency"),
+              "buy": stock.get("buy"),
+              "sell": stock.get("sell"),
+              "hold": stock.get("hold"),
+              "potentialUpside": stock.get("potentialUpside"),
+              "potentialDownside": stock.get("potentialDownside"),
+              # keep assessment but clip to 800 chars to avoid huge prompts
+              "languageAssessment": (stock.get("languageAssessment") or "")[:800]
+          })
+    except Exception:
+      trimmed = ctx
+
+    prompt = (
+        "You are a helpful investment assistant. "
+        "Answer briefly, clearly, and cite concrete figures from the provided context when relevant. "
+        "Avoid hallucinating tickers or prices not present in the context. "
+        "If information is missing, say so and propose the next best step.\n\n"
+        f"USER MESSAGE:\n{user_message}\n\n"
+        "PORTFOLIO CONTEXT (JSON):\n"
+        f"{json.dumps(trimmed, ensure_ascii=False, indent=2)}\n\n"
+        "Now provide your answer to the user:"
+    )
+    return prompt
+
+
+@app.route('/api/chat', methods=['POST'])
+def chat_with_assistant():
+    """
+    Accepts: { "message": str, "context": { "portfolio": {...} } }
+    Returns: { "reply": str }
+    """
+    try:
+        payload = request.get_json(force=True, silent=True) or {}
+        user_message = (payload.get("message") or "").strip()
+        context = payload.get("context") or {}
+        portfolio_ctx = context.get("portfolio") or {}
+
+        if not user_message:
+            return jsonify({"error": "Missing 'message'"}), 400
+
+        # Build the prompt using the provided frontend context
+        prompt = _build_chat_prompt(user_message, portfolio_ctx)
+
+        # Use a lightweight generic assistant for chat
+        chat_assistant = AIAssistant(
+            provider="ollama",
+            model="qwen3:14b",
+            langchain=False
+        )
+
+        reply = chat_assistant.generate_response(prompt)
+        # Ensure string
+        if not isinstance(reply, str):
+            reply = str(reply)
+
+        return jsonify({"reply": reply})
+    except Exception as e:
+        # Keep error generic for client; log detail server-side if needed
+        return jsonify({"error": str(e)}), 500
+
 
 def main():
     app.run(debug=True) # for development only

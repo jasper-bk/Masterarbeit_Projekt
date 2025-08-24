@@ -913,6 +913,5 @@ if __name__ == "__main__":
 # - Im Frontend werden einige Werte noch nicht angezeigt
 
 # Sonstige To-Dos:
-# - Portfolios laden und speichern
 # - Evaluations-Metriken evtl direkt integrieren? oder doch seperat in Jupyter-Lab
 
