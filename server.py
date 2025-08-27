@@ -32,15 +32,18 @@ assistant = PortfolioAIAssistant(
 )
 
 pf = assistant.new_portfolio("Sample Portfolio", "Long-term growth / balanced risk")
-pf.add_asset("MBG.DE", name="Mercedes-Benz Group")
-pf.add_trade("MBG.DE", quantity=10, price=50.10, date_str="2023-05-01")
-pf.add_trade("MBG.DE", quantity=56, price=52.00, date_str="2023-06-01")
+pf.add_asset("MBGAF", name="Mercedes-Benz Group")
+pf.add_trade("MBGAF", quantity=10, price=50.10, date_str="2023-05-01")
+pf.add_trade("MBGAF", quantity=56, price=52.00, date_str="2023-06-01")
 
 pf.add_asset("GOOG", name="Alphabet")
 pf.add_trade("GOOG", quantity=25, price=134.50, date_str="2023-02-15")
 
-pf.add_asset("BAYN.DE", name="Bayer AG")
-pf.add_trade("BAYN.DE", quantity=300, price=60.51, date_str="2023-02-15")
+pf.add_asset("ASML", name="ASML Holding N.V.")
+pf.add_trade("ASML", quantity=4, price=460.44, date_str="2022-06-08")
+
+pf.add_asset("DKILY", name="Daikin Industries")
+pf.add_trade("DKILY", quantity=4, price=150.12, date_str="2022-06-08")
 
 chat = PortfolioChat(assistant, pf, use_rag=True)
 
@@ -106,7 +109,6 @@ def get_stocks():
 
 @app.route('/api/evaluate-full-portfolio')
 def evaluate_full_portfolio():
-    global portfolio #should be replaced later with better practice
 
     try:
         assistant.evaluate_portfolio(pf)
@@ -118,7 +120,6 @@ def evaluate_full_portfolio():
 
 @app.route('/api/evaluate-single-asset/<path:identifier>')
 def evaluate_single_asset(identifier):
-    global portfolio #should be replaced later with better practice
 
     try:
         assistant.evaluate_portfolio(pf, specific_assets=[identifier])
@@ -193,8 +194,8 @@ def chat_with_assistant():
 
 
 def main():
-    app.run(debug=True) # for development only
-    # app.run(host='0.0.0.0', port=5000)
+    #app.run(debug=True) # for development only
+    app.run(host='0.0.0.0', port=8080)
 
 if __name__ == '__main__':
     main()

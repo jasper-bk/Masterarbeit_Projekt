@@ -1,27 +1,31 @@
-# Core dependencies
-langchain-core
-langchain-community
-langchain_ollama
-langchain_openai
-langchain_anthropic
-langchain_google_genai
-finnhub-python
+# Langchain dependencies
+langchain-core>=0.3.74
+langchain-community>=0.3.27
+langchain_ollama>=0.3.6
+langchain_openai>=0.3.30
+langchain_anthropic>=0.3.19
+langchain_google_genai>=2.1.9
 
-faiss-cpu # for RAG
+# Finance data provider
+finnhub-python>=2.4.24
+yfinance>=0.2.65
 
-dotenv
-matplotlib
-seaborn
-
-flask>=3.0.3
-flask_cors
-requests>=2.32.3
-retry
-yfinance
-colorlog
-python-dotenv>=1.0.1
-typing-extensions>=4.12.0   # Essential for new Python type system
-feedparser
 
 # Ollama specific
-ollama
+ollama>=0.5.3
+faiss-cpu>=1.12.0 # for RAG
+
+# Visualization
+matplotlib>=3.10.5
+seaborn>=0.13.2
+
+# Webs
+flask>=3.0.3
+flask_cors>=6.0.1
+requests>=2.32.3
+
+# Misc
+python-dotenv>=1.0.1
+typing-extensions>=4.12.0   # Essential for new Python type system
+retry>=0.9.2
+

@@ -877,9 +877,9 @@ if __name__ == "__main__":
     )
 
     pf = assistant.new_portfolio("Sample Portfolio", "Long-term growth / balanced risk")
-    pf.add_asset("MBG.DE", name="Mercedes-Benz Group")
-    pf.add_trade("MBG.DE", quantity=10, price=50.10, date_str="2023-05-01")
-    pf.add_trade("MBG.DE", quantity=56, price=52.00, date_str="2023-06-01")
+    pf.add_asset("MBGAF", name="Mercedes-Benz Group")
+    pf.add_trade("MBGAF", quantity=10, price=50.10, date_str="2023-05-01")
+    pf.add_trade("MBGAF", quantity=56, price=52.00, date_str="2023-06-01")
 
     pf.add_asset("GOOG", name="Alphabet")
     pf.add_trade("GOOG", quantity=25, price=134.50, date_str="2023-02-15")
@@ -888,7 +888,7 @@ if __name__ == "__main__":
     pf.save_to_file("./tmp_data/portfolio_before_evaluation.json")
 
     # Evaluate (public API unchanged) - accepts dict or Portfolio
-    result = assistant.evaluate_portfolio(pf, specific_assets=["MBG.DE", "GOOG"])
+    result = assistant.evaluate_portfolio(pf, specific_assets=["MBGAF", "GOOG"])
     print(json.dumps(result, indent=2))
 
     pf.save_to_file("./tmp_data/portfolio_after_evaluation.json")

@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  portfolio-ai:
+    build: .
+    container_name: portfolio-ai
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      - ollama
+    environment:
+      # if using ollama
+      OLLAMA_HOST: http://ollama:11434
+
+  ollama:
+    image: docker.io/ollama/ollama:latest
+    container_name: ollama
+    #ports:
+    #  - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    entrypoint: >
+      sh -c "
+        ollama serve &
+        sleep 5 &&
+        ollama pull qwen3:14b &&
+        ollama pull nomic-embed-text:latest &&
+        wait
+      "
+
+volumes:
+  ollama_data:
