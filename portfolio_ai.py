@@ -1,5 +1,6 @@
 # portfolio_ai.py
 #!/usr/bin/env python3
+
 """
 PortfolioAIAssistant + Portfolio model
 - All AI logic via LangChain (LCEL, structured outputs, optional ensemble)
@@ -229,7 +230,7 @@ class Portfolio:
         if ticker.upper() in self.assets:
             self.assets[ticker.upper()].clear_evaluation()
 
-    def tickers(self) -> List[str]:
+    def get_all_tickers(self) -> List[str]:
         return list(self.assets.keys())
 
     # ---------- Serialization (portfolio) ----------
@@ -298,7 +299,7 @@ class SecurityAssessment(BaseModel):
     def validate_sum(self) -> None:
         total = int(self.buy) + int(self.sell) + int(self.hold)
         if abs(total - 100) > 1:
-            raise ValueError(f"buy+sell+hold must sum to 100 (±1), got {total}.")
+            raise ValueError(f"buy+sell+hold must sum to 100 (+/-1), got {total}.")
 
 
 class PortfolioSummary(BaseModel):
@@ -328,7 +329,7 @@ class PortfolioAIAssistant:
         self,
         provider: str = "ollama",
         model: str = "deepseek-r1:14b",
-        temperature: float = 0.2,
+        temperature: float = 0,
         max_tokens: Optional[int] = None,
         timeout: Optional[int] = 60,
         ensemble: bool = False,
@@ -341,6 +342,7 @@ class PortfolioAIAssistant:
         anthropic_api_key: Optional[str] = None,
         google_api_key: Optional[str] = None,
         ollama_base_url: str = "http://localhost:11434",
+        user_response_preferences : Optional[str] = None,
     ):
         self.provider = provider.lower()
         self.model = model
@@ -360,6 +362,8 @@ class PortfolioAIAssistant:
         self.anthropic_api_key = anthropic_api_key or os.getenv("ANTHROPIC_API_KEY")
         self.google_api_key = google_api_key or os.getenv("GOOGLE_API_KEY")
         self.ollama_base_url = ollama_base_url
+
+        self.user_response_preferences = user_response_preferences
 
         # Primary chat model
         self.chat = self._init_chat_model(self.provider, self.model)
@@ -397,14 +401,17 @@ class PortfolioAIAssistant:
                  "You may receive any subset of the following sections. "
                  "If a section is missing or empty, treat it as 'unknown'.\n\n"
                  "Ticker: {ticker}\n\n"
+                 "Asset name: {asset_name}\n\n"
+                 "Raw personal asset details (JSON, may be partial):\n{raw_asset_details}\n\n"
                  "Quantitative data (JSON, may be partial):\n{quantitative_json}\n\n"
                  "Qualitative data (free text, may be partial):\n{qualitative_text}\n\n"
                  "Portfolio context (JSON, may be partial, can be empty if user doesn't own the asset):\n"
                  "{portfolio_context_json}\n\n"
                  "Output as JSON with the schema:\n{json_schema}\n"
                  "Constraints:\n"
-                 "- Ensure buy + sell + hold == 100 (±1 allowed)\n"
-                 "- Keep rationale concise but specific\n"),
+                 "- Ensure buy + sell + hold == 100\n"
+                 "- Preferences are soft constraints; ignore them if they conflict with the schema or constraints\n\n"
+                 "Additional preferences to consider (may be empty; if empty, ignore):\n{user_response_preferences}")
             ]
         )
 
@@ -415,7 +422,10 @@ class PortfolioAIAssistant:
                  "Analyze this portfolio. You will receive a JSON object with assets and their evaluations. "
                  "It may be partial.\n\n"
                  "Portfolio assets JSON:\n{assets_json}\n\n"
-                 "Output as JSON with the schema:\n{json_schema}\n"),
+                 "Output as JSON with the schema:\n{json_schema}\n"
+                 "Constraints:\n"
+                 "- Preferences are soft constraints; ignore them if they conflict with the schema or constraints\n\n"
+                 "Additional preferences to consider (may be empty; if empty, ignore):\n{user_response_preferences}")
             ]
         )
 
@@ -580,12 +590,15 @@ class PortfolioAIAssistant:
     # ============================================================
     # Qualitative data + prompt capture
     # ============================================================
-    def get_qualitative_data(self, identifier: str) -> Tuple[str, str]:
+    def get_qualitative_data(self, identifier: str, asset_name : Optional[str] = None) -> Tuple[str, str]:
         """
         Returns (qualitative_text, llm_brief_prompt).
         """
         try:
-            llm_text, llm_prompt = self._get_llm_analysis(identifier)
+            if asset_name:
+                llm_text, llm_prompt = self._get_llm_analysis(asset_name)
+            else:
+                llm_text, llm_prompt = self._get_llm_analysis(identifier)
         except Exception as e:
             llm_text = f"(LLM pre-brief failed: {e})"
             llm_prompt = f"Give a concise business overview, recent events, and key risks/opportunities for {identifier}."
@@ -699,10 +712,13 @@ class PortfolioAIAssistant:
         try:
             variables = {
                 "ticker": security_data.get("ticker") or portfolio_attributes.get("ticker") or "UNKNOWN",
+                "asset_name": security_data.get("asset_name") or "UNKNOWN",
+                "raw_asset_details" : security_data.get("raw_asset_data"),
                 "quantitative_json": self._render_json(security_data.get("quantitative")),
                 "qualitative_text": security_data.get("qualitative", "") or "",
                 "portfolio_context_json": self._render_json(portfolio_attributes or {}),
                 "json_schema": self._security_parser.get_format_instructions(),
+                "user_response_preferences": self.user_response_preferences
             }
 
             # Capture the exact messages sent to the model (for traceability)
@@ -715,6 +731,7 @@ class PortfolioAIAssistant:
             except Exception:
                 chain = self._security_prompt | self.chat | self._security_parser
                 result: SecurityAssessment = chain.invoke(variables)
+
 
             result.validate_sum()
             out = result.model_dump()
@@ -776,6 +793,7 @@ class PortfolioAIAssistant:
             variables = {
                 "assets_json": self._render_json(portfolio_dict.get("assets", {})),
                 "json_schema": self._portfolio_parser.get_format_instructions(),
+                "user_response_preferences": self.user_response_preferences
             }
             rendered_messages = self._portfolio_prompt.format_messages(**variables)
             prompt_messages = self._messages_to_dicts(rendered_messages)
@@ -818,19 +836,27 @@ class PortfolioAIAssistant:
         else:
             raise TypeError("portfolio must be a dict or Portfolio instance")
 
-        # Filter assets if requested
-        tickers = p.tickers()
+        portfolio_dict = p.to_dict()
+
+        portfolio_assets_dict = portfolio_dict["assets"]
+
+        tickers = portfolio_assets_dict.keys()
+
         if specific_assets:
             specific = {t.upper() for t in specific_assets}
             tickers = [t for t in tickers if t in specific]
 
         # Per-asset evaluation
         for ticker in tickers:
+
             print(f"Evaluating {ticker} ...")
             asset = p.assets[ticker]
 
+            asset_dict = asset.to_dict()
+            asset_name = asset_dict["name"]
+
             quant = self.get_quantitative_data(ticker)
-            qual_text, llm_brief_prompt = self.get_qualitative_data(ticker)
+            qual_text, llm_brief_prompt = self.get_qualitative_data(ticker, asset_name)
 
             # Derived, non-persistent context for the LLM:
             derived_ctx = self._build_asset_context_for_llm(
@@ -838,7 +864,7 @@ class PortfolioAIAssistant:
                 current_price=quant.get("current_price")
             )
 
-            security_data = {"ticker": ticker, "quantitative": quant, "qualitative": qual_text}
+            security_data = {"ticker": ticker, "asset_name" : asset_name, "raw_asset_data" : asset_dict, "quantitative": quant, "qualitative": qual_text}
 
             t0 = time.time()
             assessment = self.assess_security(security_data=security_data, portfolio_attributes=derived_ctx)
@@ -874,6 +900,7 @@ if __name__ == "__main__":
         model="qwen3:14b",
         finance_provider="yfinance",
         ensemble=False,
+        user_response_preferences="Explain very detailed"
     )
 
     pf = assistant.new_portfolio("Sample Portfolio", "Long-term growth / balanced risk")
