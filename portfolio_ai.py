@@ -919,26 +919,3 @@ if __name__ == "__main__":
     print(json.dumps(result, indent=2))
 
     pf.save_to_file("./tmp_data/portfolio_after_evaluation.json")
-
-
-# To-Dos:
-# ausführlich testen,
-# dann in Frontend einbinden
-# im Frontend, Prompt irgendwie anzeigen lassen und vllt sogar über das Frontend Atien hinzufügen und löschen können
-
-# To-Dos:
-# Währung vereinheitlichen, mehr Werte berechnen, ...
-
-# ungetestet
-# - alle Anbindungen außer Ollama
-# - Ensemble Learning
-# - Laden eines Portfolios aus dem File
-# - Integration in Frontend
-
-# Issues:
-# - Finnhub nicht funktional
-# - Im Frontend werden einige Werte noch nicht angezeigt
-
-# Sonstige To-Dos:
-# - Evaluations-Metriken evtl direkt integrieren? oder doch seperat in Jupyter-Lab
-

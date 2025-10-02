@@ -3,11 +3,10 @@
 from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
 
-from llm import AIAssistant
-
 from portfolio_ai import PortfolioAIAssistant
 from portfolio_chat import PortfolioChat
 
+import os
 import re
 import json
 import dotenv
@@ -16,20 +15,28 @@ app = Flask(__name__, template_folder='webpage/templates', static_folder='webpag
 CORS(app)  # Enable CORS if needed
 
 
-# replace with faster LLM
-#assistant = PortfolioAIAssistant(
-#    provider="ollama",
-#    model="deepseek-r1:14b"
-#)
-
 dotenv.load_dotenv()
 
 assistant = PortfolioAIAssistant(
-    provider="ollama",
-    model="qwen3:14b",
-    finance_provider="yfinance",
-    ensemble=False,
+    provider=os.getenv("PORTFOLIO_AI_PROVIDER", "ollama"),
+    model=os.getenv("PORTFOLIO_AI_MODEL", "qwen3:14b"),
+    finance_provider=os.getenv("PORTFOLIO_FINANCE_PROVIDER", "yfinance"),
+    ensemble=os.getenv("PORTFOLIO_ENSEMBLE", "False").lower() == "true",
+    ollama_base_url=os.getenv("OLLAMA_HOST", "http://localhost:11434"),
 )
+
+
+#######################################################
+# As of now the application is not a finished product #
+#######################################################
+
+###########################
+# The whole UI is a demo. #
+###########################
+
+#####################################################
+# Change code at your own risk when you play around #
+#####################################################
 
 pf = assistant.new_portfolio("Sample Portfolio", "Long-term growth / balanced risk")
 pf.add_asset("MBGAF", name="Mercedes-Benz Group")

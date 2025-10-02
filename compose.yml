@@ -5,7 +5,7 @@ services:
     build: .
     container_name: portfolio-ai
     ports:
-      - "8000:8000"
+      - "8080:8080"
     env_file:
       - .env
     volumes:
